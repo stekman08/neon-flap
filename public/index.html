@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Flap</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="ui-layer">
+            <div id="start-screen" class="screen active">
+                <h1>NEON FLAP</h1>
+                <p>Press SPACE or TAP to Jump</p>
+                <button id="start-btn">START GAME</button>
+                <button id="ai-btn" style="margin-top: 10px; background: #f0f; box-shadow: 0 0 10px #f0f;">WATCH
+                    AI</button>
+            </div>
+            <div id="game-over-screen" class="screen">
+                <h1>GAME OVER</h1>
+                <p>Score: <span id="final-score">0</span></p>
+                <p>Best: <span id="best-score">0</span></p>
+                <button id="restart-btn">TRY AGAIN</button>
+            </div>
+            <div id="score-hud">0</div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

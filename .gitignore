@@ -1,0 +1,29 @@
+# Node.js
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+
+# Misc
+*.swp
+*.swo
+
+# Ignore everything except public
+!/public/
