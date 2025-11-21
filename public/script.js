@@ -492,7 +492,7 @@ function gameOver() {
     gameState = 'GAMEOVER';
     createParticles(bird.x + bird.width / 2, bird.y + bird.height / 2, 50, '#ff0000'); // Explosion
 
-    if (score > highScore) {
+    if (!isAutoPlay && score > highScore) {
         highScore = score;
         localStorage.setItem('neonFlapHighScore', highScore);
     }
