@@ -72,7 +72,7 @@ describe('GameLoop', () => {
       game.init();
 
       expect(game.currentPipeSpeed).toBe(3); // INITIAL_PIPE_SPEED
-      expect(game.currentPipeGap).toBe(170);  // INITIAL_PIPE_GAP
+      expect(game.currentPipeGap).toBeCloseTo(170, 0);  // GameConfig.initialPipeGap (~169.8)
     });
 
     it('should create bird instance', () => {

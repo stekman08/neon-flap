@@ -106,3 +106,71 @@ button:hover {
 #best-score {
     color: #0ff;
 }
+
+/* ==========================================
+   Responsive Mobile/Desktop Styles
+   ========================================== */
+
+/* Mobile Viewport (< 768px) */
+@media (max-width: 767px) {
+    body {
+        justify-content: flex-start;
+        align-items: flex-start;
+        overflow: hidden; /* Prevent scrolling on mobile */
+    }
+
+    .game-container {
+        width: 100vw;
+        height: 100vh;
+        box-shadow: none;
+        border-radius: 0;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+
+    canvas {
+        width: 100vw !important;
+        height: 100vh !important;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+
+    /* Scale UI elements proportionally on mobile */
+    h1 {
+        font-size: clamp(32px, 8vw, 48px);
+    }
+
+    p {
+        font-size: clamp(14px, 4vw, 18px);
+    }
+
+    button {
+        font-size: clamp(16px, 4.5vw, 20px);
+        padding: clamp(10px, 3vw, 15px) clamp(30px, 8vw, 40px);
+    }
+
+    #score-hud {
+        font-size: clamp(32px, 8vw, 40px);
+        top: env(safe-area-inset-top, 20px); /* iOS safe area support */
+        right: env(safe-area-inset-right, 20px);
+        left: auto; /* Override centered position */
+        width: auto; /* Override full width */
+        text-align: right;
+        padding-right: 20px;
+    }
+}
+
+/* Desktop Viewport (>= 768px) */
+@media (min-width: 768px) {
+    .game-container {
+        width: 400px;
+        height: 600px;
+    }
+
+    canvas {
+        width: 400px !important;
+        height: 600px !important;
+    }
+}

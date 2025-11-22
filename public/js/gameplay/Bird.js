@@ -1,4 +1,4 @@
-import { GRAVITY, JUMP_STRENGTH } from '../config/constants.js';
+import { GameConfig } from '../config/GameConfig.js';
 
 export class Bird {
     constructor(canvas, ctx, gameHue, createParticles, gameOver) {
@@ -7,12 +7,23 @@ export class Bird {
         this.gameHue = gameHue;
         this.createParticles = createParticles;
         this.gameOver = gameOver;
-        this.x = 50;
+
+        // Use proportional coordinates from GameConfig
+        this.updateDimensions();
+
         this.y = canvas.height / 2;
-        this.width = 30;
-        this.height = 30;
         this.velocity = 0;
         this.exhaust = []; // Particle based exhaust instead of line trail
+    }
+
+    /**
+     * Update bird dimensions based on current canvas size
+     * Called on initialization and when viewport resizes
+     */
+    updateDimensions() {
+        this.x = GameConfig.birdX;
+        this.width = GameConfig.birdSize;
+        this.height = GameConfig.birdSize;
     }
 
     draw(ctx, gameHue) {
@@ -87,7 +98,7 @@ export class Bird {
     }
 
     update(gameHue) {
-        this.velocity += GRAVITY;
+        this.velocity += GameConfig.gravity;
         this.y += this.velocity;
 
         // Calculate Engine Position for Exhaust
@@ -99,7 +110,8 @@ export class Bird {
         const engineX = centerX + (-this.width / 2) * Math.cos(rotation);
         const engineY = centerY + (-this.width / 2) * Math.sin(rotation);
 
-        // Add Exhaust Particle
+        // Add Exhaust Particle (scaled with bird size)
+        const exhaustScale = GameConfig.birdSize / 30; // Scale relative to reference size
         this.exhaust.push({
             x: engineX,
             y: engineY,
@@ -107,7 +119,7 @@ export class Bird {
             vy: (Math.random() - 0.5) * 2, // Slight vertical spread
             life: 0.8,
             color: `hsla(${gameHue}, 100%, 80%, 0.6)`, // Brighter core
-            size: Math.random() * 4 + 2
+            size: (Math.random() * 4 + 2) * exhaustScale
         });
 
         // Update Exhaust
@@ -137,7 +149,7 @@ export class Bird {
     }
 
     jump() {
-        this.velocity = JUMP_STRENGTH;
+        this.velocity = GameConfig.jumpStrength;
         // Burst of particles on jump
         this.createParticles(this.x, this.y + this.height / 2, 5, '#fff');
     }

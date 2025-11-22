@@ -1,11 +1,13 @@
+import { GameConfig } from '../config/GameConfig.js';
+
 export class Star {
     constructor(canvas, ctx) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 2;
-        this.speed = Math.random() * 0.5 + 0.1;
+        this.size = Math.random() * GameConfig.scaleWidth(2); // 0.5% of width
+        this.speed = Math.random() * GameConfig.scaleWidth(0.5) + GameConfig.scaleWidth(0.1); // 0.025%-0.15% of width
     }
 
     update() {
