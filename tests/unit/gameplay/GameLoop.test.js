@@ -141,7 +141,8 @@ describe('GameLoop', () => {
 
       game.gameOver();
 
-      expect(game.particles.length).toBe(50);
+      const stats = game.particlePool.getStats();
+      expect(stats.active).toBe(50);
     });
   });
 
@@ -269,16 +270,22 @@ describe('GameLoop', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
       game.init();
 
-      // Add particle with no life
-      game.particles = [{
-        life: 0,
-        update: vi.fn(),
-        draw: vi.fn()
-      }];
+      // Create a particle
+      game.createParticles(100, 100, 1, '#fff');
 
+      // Get initial stats
+      let stats = game.particlePool.getStats();
+      expect(stats.active).toBe(1);
+
+      // Manually set particle life to 0
+      game.particlePool.active[0].life = 0;
+
+      // Update should remove dead particle
       game.update();
 
-      expect(game.particles.length).toBe(0);
+      stats = game.particlePool.getStats();
+      expect(stats.active).toBe(0);
+      expect(stats.pooled).toBeGreaterThan(0); // Particle returned to pool
     });
   });
 });
