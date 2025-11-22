@@ -3,10 +3,19 @@ const ctx = canvas.getContext('2d');
 
 // Game Constants
 const GRAVITY = 0.25;
-const JUMP_STRENGTH = -5; // Reduced jump strength for smoother feel
-const PIPE_SPEED = 3;
+const JUMP_STRENGTH = -5;
 const PIPE_SPAWN_RATE = 120; // Frames
-const PIPE_GAP = 170; // Wider gap for better playability
+
+// Difficulty Constants
+const INITIAL_PIPE_SPEED = 3;
+const INITIAL_PIPE_GAP = 170;
+const SPEED_INCREMENT = 0.5;
+const MAX_SPEED = 30;
+const MIN_GAP = 120;
+
+// Game Variables
+let currentPipeSpeed = INITIAL_PIPE_SPEED;
+let currentPipeGap = INITIAL_PIPE_GAP;
 
 // Set canvas size
 canvas.width = 400;
@@ -16,6 +25,7 @@ canvas.height = 600;
 let gameState = 'START'; // START, PLAYING, GAMEOVER
 let frames = 0;
 let score = 0;
+let pipesPassed = 0;
 let highScore = localStorage.getItem('neonFlapHighScore') || 0;
 let gameHue = 0; // For rainbow effect
 
@@ -175,18 +185,42 @@ class Pipe {
     constructor() {
         this.x = canvas.width;
         this.width = 60;
-        this.topHeight = Math.random() * (canvas.height - PIPE_GAP - 100) + 50;
-        this.bottomY = this.topHeight + PIPE_GAP;
+
+        // Ensure gap is never impossible (absolute min MIN_GAP)
+        const safeGap = Math.max(currentPipeGap, MIN_GAP);
+
+        // Constrain vertical movement from last pipe
+        // Max vertical move per frame is roughly (JUMP_STRENGTH + GRAVITY*t)
+        // At speed 3, 200px horizontal is ~66 frames.
+        // We want to be safe. Let's limit change to +/- 100px.
+        const maxDiff = 100;
+        let minCenter = lastPipeGapCenter - maxDiff;
+        let maxCenter = lastPipeGapCenter + maxDiff;
+
+        // Also clamp to screen bounds (padding 50px)
+        const padding = 50;
+        minCenter = Math.max(minCenter, padding + safeGap / 2);
+        maxCenter = Math.min(maxCenter, canvas.height - padding - safeGap / 2);
+
+        // Randomize within constraints
+        const center = Math.random() * (maxCenter - minCenter) + minCenter;
+
+        this.topHeight = center - safeGap / 2;
+        this.bottomY = center + safeGap / 2;
         this.bottomHeight = canvas.height - this.bottomY;
+
         this.passed = false;
-        // Store hue at creation time for variety, or use global? Let's use global offset
+
+        // Update global tracker
+        lastPipeGapCenter = center;
+
+        // Store hue offset for variety
         this.hueOffset = Math.random() * 360;
     }
 
     draw() {
         ctx.save();
-        // Use global hue + offset, or just global hue + 180 for contrast?
-        // Let's make pipes complementary to the bird (bird is gameHue)
+        // Make pipes complementary to the bird
         const pipeColor = `hsl(${gameHue + 180}, 100%, 50%)`;
 
         ctx.shadowBlur = 15;
@@ -207,7 +241,7 @@ class Pipe {
     }
 
     update() {
-        this.x -= PIPE_SPEED;
+        this.x -= currentPipeSpeed;
     }
 }
 
@@ -282,7 +316,7 @@ class CitySkyline {
 
     update() {
         // Move buildings slower than pipes for parallax (0.5x speed)
-        const speed = PIPE_SPEED * 0.5;
+        const speed = currentPipeSpeed * 0.5;
 
         this.buildings.forEach(b => {
             b.x -= speed;
@@ -327,12 +361,13 @@ class CitySkyline {
 class SynthGrid {
     constructor() {
         this.horizonY = canvas.height * 0.8; // Horizon line
-        this.speed = PIPE_SPEED;
+        this.speed = currentPipeSpeed;
         this.offset = 0;
         this.gridSize = 40;
     }
 
     update() {
+        this.speed = currentPipeSpeed; // Update speed dynamically
         this.offset = (this.offset + this.speed) % this.gridSize;
     }
 
@@ -452,7 +487,8 @@ let city;
 let scorePopups = [];
 let matrixRain = [];
 let synthGrid;
-let isAutoPlay = false;// --- Functions ---
+let isAutoPlay = false;
+let lastPipeGapCenter = 0;// --- Functions ---
 
 function init() {
     bird = new Bird();
@@ -462,10 +498,16 @@ function init() {
     synthGrid = new SynthGrid();
     scorePopups = [];
     score = 0;
+    pipesPassed = 0;
     frames = 0;
     gameHue = 0;
     isAutoPlay = false;
+    lastPipeGapCenter = canvas.height / 2; // Init center
     scoreHud.innerText = score;
+
+    // Reset difficulty
+    currentPipeSpeed = INITIAL_PIPE_SPEED;
+    currentPipeGap = INITIAL_PIPE_GAP;
 
     // Init stars if empty
     if (stars.length === 0) {
@@ -492,7 +534,7 @@ function gameOver() {
     gameState = 'GAMEOVER';
     createParticles(bird.x + bird.width / 2, bird.y + bird.height / 2, 50, '#ff0000'); // Explosion
 
-    if (score > highScore) {
+    if (!isAutoPlay && score > highScore) {
         highScore = score;
         localStorage.setItem('neonFlapHighScore', highScore);
     }
@@ -518,16 +560,14 @@ function performAI() {
     let targetY = canvas.height / 2;
     if (nextPipe) {
         // Target the center of the gap
-        // We want to be slightly below the center so the jump pushes us up through it
-        targetY = nextPipe.bottomY - (PIPE_GAP / 2) + 15;
+        targetY = nextPipe.bottomY - (currentPipeGap / 2);
 
-        // Add "Human" noise to AI so it doesn't get perfect score every time
-        targetY += Math.sin(frames * 0.05) * 35;
+
     } else {
         // No pipe, stay in middle
         targetY = canvas.height / 2;
-    }    // Jump if we are below the target
-    if (bird.y > targetY) {
+    }    // Jump if we are below the target, or if we are about to fall below it
+    if (bird.y + bird.velocity > targetY) {
         bird.jump();
     }
 }
@@ -547,7 +587,12 @@ function update() {
         bird.update();
 
         // Pipe Spawning
-        if (frames % PIPE_SPAWN_RATE === 0) {
+        // Adjust spawn rate based on speed
+
+        // Let's use a dynamic spawn rate
+        const currentSpawnRate = Math.max(60, Math.floor(PIPE_SPAWN_RATE * (INITIAL_PIPE_SPEED / currentPipeSpeed)));
+
+        if (frames % currentSpawnRate === 0) {
             pipes.push(new Pipe());
         }
 
@@ -568,9 +613,10 @@ function update() {
             // Score
             if (p.x + p.width < bird.x && !p.passed) {
                 p.passed = true;
+                pipesPassed++;
 
                 // Check for perfect pass
-                const gapCenter = p.topHeight + (PIPE_GAP / 2);
+                const gapCenter = p.topHeight + (currentPipeGap / 2);
                 const birdCenter = bird.y + (bird.height / 2);
                 const diff = Math.abs(gapCenter - birdCenter);
 
@@ -584,6 +630,11 @@ function update() {
                 }
 
                 scoreHud.innerText = score;
+
+                // Difficulty Scaling
+                if (pipesPassed % 3 === 0) {
+                    currentPipeSpeed = Math.min(currentPipeSpeed + SPEED_INCREMENT, MAX_SPEED);
+                }
             }
 
             // Remove off-screen pipes
