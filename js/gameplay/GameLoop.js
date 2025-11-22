@@ -1,6 +1,6 @@
 import { Bird } from './Bird.js';
 import { Pipe } from './Pipe.js';
-import { Particle } from '../effects/Particle.js';
+import { ParticlePool } from '../effects/ParticlePool.js';
 import { Star } from '../background/Star.js';
 import { CitySkyline } from '../background/CitySkyline.js';
 import { SynthGrid } from '../background/SynthGrid.js';
@@ -8,6 +8,7 @@ import { ScorePopup } from '../scoring/ScorePopup.js';
 import { MatrixColumn } from '../background/MatrixColumn.js';
 import { AIController } from '../ai/AIController.js';
 import { GameConfig } from '../config/GameConfig.js';
+import { PerformanceMonitor } from '../debug/PerformanceMonitor.js';
 import {
     PIPE_SPAWN_RATE,
     INITIAL_PIPE_SPEED,
@@ -36,12 +37,15 @@ export class GameLoop {
         // Arrays
         this.bird = null;
         this.pipes = [];
-        this.particles = [];
+        this.particlePool = new ParticlePool(ctx, 200);
         this.stars = [];
         this.city = null;
         this.scorePopups = [];
         this.matrixRain = [];
         this.synthGrid = null;
+
+        // Performance monitoring (debug mode only)
+        this.performanceMonitor = new PerformanceMonitor();
 
         // Bind methods
         this.loop = this.loop.bind(this);
@@ -52,7 +56,7 @@ export class GameLoop {
     init() {
         this.bird = new Bird(this.canvas, this.ctx, this.gameHue, (x, y, count, color) => this.createParticles(x, y, count, color), () => this.gameOver());
         this.pipes = [];
-        this.particles = [];
+        this.particlePool.clear();
         this.city = new CitySkyline(this.canvas, this.ctx);
         this.synthGrid = new SynthGrid(this.canvas, this.ctx);
         this.scorePopups = [];
@@ -85,7 +89,7 @@ export class GameLoop {
 
     createParticles(x, y, count, color) {
         for (let i = 0; i < count; i++) {
-            this.particles.push(new Particle(x, y, color, this.ctx));
+            this.particlePool.get(x, y, color);
         }
     }
 
@@ -106,6 +110,8 @@ export class GameLoop {
     }
 
     update() {
+        this.performanceMonitor.markUpdateStart();
+
         // Background
         this.gameHue += 0.5; // Cycle colors
         this.stars.forEach(star => star.update());
@@ -181,14 +187,8 @@ export class GameLoop {
             }
         }
 
-        // Particles
-        for (let i = 0; i < this.particles.length; i++) {
-            this.particles[i].update();
-            if (this.particles[i].life <= 0) {
-                this.particles.splice(i, 1);
-                i--;
-            }
-        }
+        // Particles (managed by pool)
+        this.particlePool.update();
 
         // Score Popups
         for (let i = 0; i < this.scorePopups.length; i++) {
@@ -200,9 +200,12 @@ export class GameLoop {
         }
 
         this.frames++;
+
+        this.performanceMonitor.markUpdateEnd();
     }
 
     draw() {
+        this.performanceMonitor.markDrawStart();
         // Clear Canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -227,15 +230,23 @@ export class GameLoop {
         }
 
         // Draw Particles
-        this.particles.forEach(p => p.draw(this.ctx));
+        this.particlePool.draw(this.ctx);
 
         // Draw Score Popups
         this.scorePopups.forEach(p => p.draw(this.ctx));
+
+        this.performanceMonitor.markDrawEnd();
     }
 
     loop() {
+        this.performanceMonitor.startFrame();
         this.update();
         this.draw();
+
+        // Update pool stats for monitoring
+        this.performanceMonitor.setPoolStats(this.particlePool.getStats());
+
+        this.performanceMonitor.endFrame();
         requestAnimationFrame(this.loop);
     }
 
