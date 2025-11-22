@@ -25,5 +25,10 @@ build/
 *.swp
 *.swo
 
+# BMAD-METHOD
+.bmad/
+.claude/
+docs/
+
 # Ignore everything except public
 !/public/
