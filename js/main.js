@@ -74,3 +74,8 @@ restartBtn.addEventListener('click', () => {
 // Initialize and start
 game.init();
 game.loop();
+
+// Expose game instance for E2E testing (only in localhost)
+if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    window.__GAME__ = game;
+}
