@@ -18,6 +18,7 @@ const uiElements = {
 const startBtn = document.getElementById('start-btn');
 const aiBtn = document.getElementById('ai-btn');
 const restartBtn = document.getElementById('restart-btn');
+const installBtn = document.getElementById('install-btn');
 
 // Create game instance
 const game = new GameLoop(canvas, ctx, uiElements);
@@ -83,4 +84,74 @@ game.loop();
 // Expose game instance for E2E testing (only in localhost)
 if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     window.__GAME__ = game;
+}
+
+// Register Service Worker for PWA support
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+                console.log('[PWA] Service Worker registered:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('[PWA] Service Worker registration failed:', error);
+            });
+    });
+}
+
+// PWA Install Prompt Handling
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+
+    // Save the event for later use
+    deferredPrompt = e;
+
+    // Show the install button
+    if (installBtn) {
+        installBtn.style.display = 'block';
+        console.log('[PWA] Install prompt available');
+    }
+});
+
+// Handle install button click
+if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) {
+            console.log('[PWA] No install prompt available');
+            return;
+        }
+
+        // Show the install prompt
+        deferredPrompt.prompt();
+
+        // Wait for the user's response
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`[PWA] User response: ${outcome}`);
+
+        // Clear the deferred prompt
+        deferredPrompt = null;
+
+        // Hide the install button
+        installBtn.style.display = 'none';
+    });
+}
+
+// Hide install button if app is already installed
+window.addEventListener('appinstalled', () => {
+    console.log('[PWA] App successfully installed');
+    if (installBtn) {
+        installBtn.style.display = 'none';
+    }
+    deferredPrompt = null;
+});
+
+// Check if app is running in standalone mode (already installed)
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+    console.log('[PWA] Running in standalone mode');
+    if (installBtn) {
+        installBtn.style.display = 'none';
+    }
 }

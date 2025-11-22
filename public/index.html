@@ -5,6 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Neon Flap</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="description" content="A neon-themed Flappy Bird clone with AI mode">
+    <meta name="theme-color" content="#00ffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Neon Flap">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
@@ -19,6 +35,10 @@
                 <button id="start-btn">START GAME</button>
                 <button id="ai-btn" style="margin-top: 10px; background: #f0f; box-shadow: 0 0 10px #f0f;">WATCH
                     AI</button>
+                <button id="install-btn" class="install-btn" style="display: none;">
+                    <span class="install-icon">📥</span>
+                    INSTALL APP
+                </button>
             </div>
             <div id="game-over-screen" class="screen">
                 <h1>GAME OVER</h1>

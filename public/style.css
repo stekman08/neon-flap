@@ -107,6 +107,73 @@ button:hover {
     color: #0ff;
 }
 
+/* Install Button Styling */
+.install-btn {
+    margin-top: 10px;
+    background: linear-gradient(135deg, #00ff88, #00ffcc);
+    box-shadow: 0 0 15px #00ff88, 0 0 30px #00ff88;
+    animation: pulse-install 2s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.install-btn::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    transform: rotate(45deg);
+    animation: shimmer 3s infinite;
+}
+
+.install-btn:hover {
+    background: linear-gradient(135deg, #00ffcc, #00ff88);
+    box-shadow: 0 0 25px #00ff88, 0 0 50px #00ff88, 0 0 75px #00ff88;
+    transform: scale(1.05);
+}
+
+.install-icon {
+    display: inline-block;
+    margin-right: 8px;
+    font-size: 1.2em;
+    animation: bounce-icon 1s ease-in-out infinite;
+}
+
+@keyframes pulse-install {
+    0%, 100% {
+        box-shadow: 0 0 15px #00ff88, 0 0 30px #00ff88;
+    }
+    50% {
+        box-shadow: 0 0 20px #00ff88, 0 0 40px #00ff88, 0 0 60px #00ff88;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+}
+
+@keyframes bounce-icon {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
 /* ==========================================
    Responsive Mobile/Desktop Styles
    ========================================== */
