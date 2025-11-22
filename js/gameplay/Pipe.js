@@ -1,11 +1,11 @@
-import { MIN_GAP } from '../config/constants.js';
+import { GameConfig } from '../config/GameConfig.js';
 
 export class Pipe {
     constructor(canvas, ctx, currentPipeGap, minGap, lastPipeGapCenter, gameHue, updateGapCenter) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.x = canvas.width;
-        this.width = 60;
+        this.width = GameConfig.pipeWidth;
 
         // Ensure gap is never impossible (absolute min minGap)
         const safeGap = Math.max(currentPipeGap, minGap);
@@ -13,13 +13,13 @@ export class Pipe {
         // Constrain vertical movement from last pipe
         // Max vertical move per frame is roughly (JUMP_STRENGTH + GRAVITY*t)
         // At speed 3, 200px horizontal is ~66 frames.
-        // We want to be safe. Let's limit change to +/- 100px.
-        const maxDiff = 100;
+        // We want to be safe. Let's limit change to +/- 100px (16.7% of reference height).
+        const maxDiff = GameConfig.scaleHeight(100);
         let minCenter = lastPipeGapCenter - maxDiff;
         let maxCenter = lastPipeGapCenter + maxDiff;
 
-        // Also clamp to screen bounds (padding 50px)
-        const padding = 50;
+        // Also clamp to screen bounds (padding 8.3% of height)
+        const padding = GameConfig.scaleHeight(50);
         minCenter = Math.max(minCenter, padding + safeGap / 2);
         maxCenter = Math.min(maxCenter, canvas.height - padding - safeGap / 2);
 
@@ -53,10 +53,12 @@ export class Pipe {
         // Bottom Pipe
         ctx.fillRect(this.x, this.bottomY, this.width, this.bottomHeight);
 
-        // Pipe details (stripes)
+        // Pipe details (stripes) - scaled proportionally with pipe width
+        const stripeOffset = this.width / 6; // 10px at 60px width
+        const stripeWidth = this.width / 6;  // 10px at 60px width
         ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.fillRect(this.x + 10, 0, 10, this.topHeight);
-        ctx.fillRect(this.x + 10, this.bottomY, 10, this.bottomHeight);
+        ctx.fillRect(this.x + stripeOffset, 0, stripeWidth, this.topHeight);
+        ctx.fillRect(this.x + stripeOffset, this.bottomY, stripeWidth, this.bottomHeight);
 
         ctx.restore();
     }

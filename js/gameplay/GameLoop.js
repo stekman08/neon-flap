@@ -7,15 +7,12 @@ import { SynthGrid } from '../background/SynthGrid.js';
 import { ScorePopup } from '../scoring/ScorePopup.js';
 import { MatrixColumn } from '../background/MatrixColumn.js';
 import { AIController } from '../ai/AIController.js';
+import { GameConfig } from '../config/GameConfig.js';
 import {
-    GRAVITY,
-    JUMP_STRENGTH,
     PIPE_SPAWN_RATE,
     INITIAL_PIPE_SPEED,
-    INITIAL_PIPE_GAP,
     SPEED_INCREMENT,
-    MAX_SPEED,
-    MIN_GAP
+    MAX_SPEED
 } from '../config/constants.js';
 
 export class GameLoop {
@@ -26,7 +23,7 @@ export class GameLoop {
 
         // Game state
         this.currentPipeSpeed = INITIAL_PIPE_SPEED;
-        this.currentPipeGap = INITIAL_PIPE_GAP;
+        this.currentPipeGap = GameConfig.initialPipeGap;
         this.gameState = 'START'; // START, PLAYING, GAMEOVER
         this.frames = 0;
         this.score = 0;
@@ -69,7 +66,7 @@ export class GameLoop {
 
         // Reset difficulty
         this.currentPipeSpeed = INITIAL_PIPE_SPEED;
-        this.currentPipeGap = INITIAL_PIPE_GAP;
+        this.currentPipeGap = GameConfig.initialPipeGap;
 
         // Init stars if empty
         if (this.stars.length === 0) {
@@ -129,7 +126,7 @@ export class GameLoop {
             const currentSpawnRate = Math.max(60, Math.floor(PIPE_SPAWN_RATE * (INITIAL_PIPE_SPEED / this.currentPipeSpeed)));
 
             if (this.frames % currentSpawnRate === 0) {
-                this.pipes.push(new Pipe(this.canvas, this.ctx, this.currentPipeGap, MIN_GAP, this.lastPipeGapCenter, this.gameHue, (center) => {
+                this.pipes.push(new Pipe(this.canvas, this.ctx, this.currentPipeGap, GameConfig.minPipeGap, this.lastPipeGapCenter, this.gameHue, (center) => {
                     this.lastPipeGapCenter = center;
                 }));
             }
@@ -157,8 +154,9 @@ export class GameLoop {
                     const gapCenter = p.topHeight + (this.currentPipeGap / 2);
                     const birdCenter = this.bird.y + (this.bird.height / 2);
                     const diff = Math.abs(gapCenter - birdCenter);
+                    const perfectThreshold = GameConfig.scaleHeight(25); // ~4.2% of height
 
-                    if (diff < 25) { // Threshold for perfect
+                    if (diff < perfectThreshold) { // Threshold for perfect
                         this.score += 2;
                         this.scorePopups.push(new ScorePopup(this.bird.x, this.bird.y - 20, "+2", this.ctx, "#ffd700"));
                         this.createParticles(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2, 40, "#ffd700");
@@ -239,5 +237,29 @@ export class GameLoop {
         this.update();
         this.draw();
         requestAnimationFrame(this.loop);
+    }
+
+    /**
+     * Handle viewport resize - update all entities with new dimensions
+     * Called by ViewportManager when canvas size changes
+     */
+    handleResize() {
+        // Update bird dimensions
+        if (this.bird) {
+            this.bird.updateDimensions();
+        }
+
+        // Update current pipe gap to new proportional value
+        this.currentPipeGap = GameConfig.initialPipeGap;
+
+        // Note: Pipes don't need updateDimensions() - they use GameConfig.pipeWidth directly
+        // Background entities (stars, city, grid, matrix) also use GameConfig directly
+
+        // Recreate matrix rain columns based on new canvas width
+        this.matrixRain = [];
+        const colCount = Math.floor(this.canvas.width / GameConfig.scaleWidth(15));
+        for (let i = 0; i < colCount; i++) {
+            this.matrixRain.push(new MatrixColumn(i * GameConfig.scaleWidth(15), this.canvas, this.ctx));
+        }
     }
 }

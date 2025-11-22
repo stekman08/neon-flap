@@ -1,13 +1,9 @@
 import { GameLoop } from './gameplay/GameLoop.js';
-import { CANVAS_WIDTH, CANVAS_HEIGHT } from './config/constants.js';
+import { ViewportManager } from './config/ViewportManager.js';
 
 // Get canvas
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
-// Set canvas size
-canvas.width = CANVAS_WIDTH;
-canvas.height = CANVAS_HEIGHT;
 
 // Get UI elements
 const uiElements = {
@@ -25,6 +21,15 @@ const restartBtn = document.getElementById('restart-btn');
 
 // Create game instance
 const game = new GameLoop(canvas, ctx, uiElements);
+
+// Initialize ViewportManager for responsive canvas sizing
+const viewportManager = new ViewportManager(canvas);
+viewportManager.onResize = () => {
+    // Update all game entities when viewport changes
+    if (game.handleResize) {
+        game.handleResize();
+    }
+};
 
 // Jump action
 function jumpAction() {
