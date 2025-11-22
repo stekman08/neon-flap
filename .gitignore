@@ -29,6 +29,13 @@ build/
 .bmad/
 .claude/
 docs/
+.github/chatmodes/
+
+# Test output
+coverage/
+test-results/
+playwright-report/
+*.spec.js-snapshots/
 
 # Ignore everything except public
 !/public/
