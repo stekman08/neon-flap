@@ -39,3 +39,4 @@ playwright-report/
 
 # Ignore everything except public
 !/public/
+public/version.json

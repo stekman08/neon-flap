@@ -19,6 +19,7 @@ const startBtn = document.getElementById('start-btn');
 const aiBtn = document.getElementById('ai-btn');
 const restartBtn = document.getElementById('restart-btn');
 const installBtn = document.getElementById('install-btn');
+const versionInfo = document.getElementById('version-info');
 
 // Create game instance
 const game = new GameLoop(canvas, ctx, uiElements);
@@ -154,4 +155,17 @@ if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.
     if (installBtn) {
         installBtn.style.display = 'none';
     }
+}
+
+// Load and display version info
+if (versionInfo) {
+    fetch('/version.json')
+        .then(response => response.json())
+        .then(data => {
+            versionInfo.textContent = data.displayFull;
+        })
+        .catch(() => {
+            // Silently fail if version.json doesn't exist
+            versionInfo.textContent = '';
+        });
 }

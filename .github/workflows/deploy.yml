@@ -18,6 +18,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for git log commands
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate version.json
+        run: node scripts/generate-version.js
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

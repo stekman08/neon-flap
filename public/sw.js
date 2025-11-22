@@ -1,4 +1,6 @@
-const CACHE_NAME = 'neon-flap-v1';
+// Cache name will be set dynamically based on version
+let CACHE_NAME = 'neon-flap-v1'; // fallback
+
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -22,14 +24,26 @@ const ASSETS_TO_CACHE = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/apple-touch-icon.png',
-  '/manifest.json'
+  '/manifest.json',
+  '/version.json'
 ];
 
-// Install event - cache assets
+// Install event - cache assets with version-based cache name
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    fetch('/version.json')
+      .then(response => response.json())
+      .then(versionInfo => {
+        CACHE_NAME = `neon-flap-${versionInfo.hash}`;
+        console.log(`[Service Worker] Using cache: ${CACHE_NAME}`);
+        return caches.open(CACHE_NAME);
+      })
+      .catch(() => {
+        // Fallback if version.json doesn't exist
+        console.log('[Service Worker] Using fallback cache name');
+        return caches.open(CACHE_NAME);
+      })
       .then((cache) => {
         console.log('[Service Worker] Caching assets');
         return cache.addAll(ASSETS_TO_CACHE);
@@ -45,7 +59,8 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          // Delete all caches except current one (starts with 'neon-flap-')
+          if (cacheName.startsWith('neon-flap-') && cacheName !== CACHE_NAME) {
             console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }

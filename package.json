@@ -4,6 +4,7 @@
   "description": "A flashy Flappy Bird clone served via Node.js",
   "main": "server.js",
   "scripts": {
+    "prestart": "node scripts/generate-version.js",
     "start": "node server.js",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run",
