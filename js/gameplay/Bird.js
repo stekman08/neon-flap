@@ -1,0 +1,144 @@
+import { GRAVITY, JUMP_STRENGTH } from '../config/constants.js';
+
+export class Bird {
+    constructor(canvas, ctx, gameHue, createParticles, gameOver) {
+        this.canvas = canvas;
+        this.ctx = ctx;
+        this.gameHue = gameHue;
+        this.createParticles = createParticles;
+        this.gameOver = gameOver;
+        this.x = 50;
+        this.y = canvas.height / 2;
+        this.width = 30;
+        this.height = 30;
+        this.velocity = 0;
+        this.exhaust = []; // Particle based exhaust instead of line trail
+    }
+
+    draw(ctx, gameHue) {
+        const currentColor = `hsl(${gameHue}, 100%, 50%)`;
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+
+        // Draw Exhaust Particles
+        this.exhaust.forEach(p => {
+            ctx.save();
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+
+        // Rotate based on velocity (tilt up/down)
+        const rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.1)));
+        ctx.rotate(rotation);
+
+        // Engine Flame (Dynamic flicker)
+        const flameLength = Math.random() * 20 + 10;
+        const flameWidth = Math.random() * 6 + 4;
+
+        // Outer flame
+        ctx.fillStyle = '#ff4500';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#ff0000';
+        ctx.beginPath();
+        ctx.moveTo(-this.width / 2, -flameWidth / 2);
+        ctx.lineTo(-this.width / 2 - flameLength, 0);
+        ctx.lineTo(-this.width / 2, flameWidth / 2);
+        ctx.fill();
+
+        // Inner flame
+        ctx.fillStyle = '#ffff00';
+        ctx.beginPath();
+        ctx.moveTo(-this.width / 2, -flameWidth / 4);
+        ctx.lineTo(-this.width / 2 - flameLength * 0.6, 0);
+        ctx.lineTo(-this.width / 2, flameWidth / 4);
+        ctx.fill();
+
+        // Ship Body
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = currentColor;
+        ctx.fillStyle = currentColor;
+
+        ctx.beginPath();
+        ctx.moveTo(this.width / 2, 0); // Nose
+        ctx.lineTo(-this.width / 2, -this.height / 2); // Top rear
+        ctx.lineTo(-this.width / 2 + 5, 0); // Engine indent
+        ctx.lineTo(-this.width / 2, this.height / 2); // Bottom rear
+        ctx.closePath();
+        ctx.fill();
+
+        // Cockpit / Detail
+        ctx.fillStyle = '#fff';
+        ctx.shadowBlur = 5;
+        ctx.shadowColor = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(this.width / 6, 0);
+        ctx.lineTo(-this.width / 4, -5);
+        ctx.lineTo(-this.width / 4, 5);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    update(gameHue) {
+        this.velocity += GRAVITY;
+        this.y += this.velocity;
+
+        // Calculate Engine Position for Exhaust
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        const rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.1)));
+
+        // Engine is at local (-width/2, 0) rotated
+        const engineX = centerX + (-this.width / 2) * Math.cos(rotation);
+        const engineY = centerY + (-this.width / 2) * Math.sin(rotation);
+
+        // Add Exhaust Particle
+        this.exhaust.push({
+            x: engineX,
+            y: engineY,
+            vx: -3 - Math.random(), // Move left faster
+            vy: (Math.random() - 0.5) * 2, // Slight vertical spread
+            life: 0.8,
+            color: `hsla(${gameHue}, 100%, 80%, 0.6)`, // Brighter core
+            size: Math.random() * 4 + 2
+        });
+
+        // Update Exhaust
+        for (let i = 0; i < this.exhaust.length; i++) {
+            let p = this.exhaust[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.04; // Fade out
+            p.size *= 0.95; // Shrink
+            if (p.life <= 0) {
+                this.exhaust.splice(i, 1);
+                i--;
+            }
+        }
+
+        // Floor collision
+        if (this.y + this.height > this.canvas.height) {
+            this.y = this.canvas.height - this.height;
+            this.gameOver();
+        }
+
+        // Ceiling collision
+        if (this.y < 0) {
+            this.y = 0;
+            this.velocity = 0;
+        }
+    }
+
+    jump() {
+        this.velocity = JUMP_STRENGTH;
+        // Burst of particles on jump
+        this.createParticles(this.x, this.y + this.height / 2, 5, '#fff');
+    }
+}
