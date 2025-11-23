@@ -18,7 +18,7 @@ test.describe('PWA Functionality', () => {
     expect(manifest.display).toBe('standalone');
     expect(manifest.theme_color).toBe('#00ffff');
     expect(manifest.background_color).toBe('#000000');
-    expect(manifest.orientation).toBe('portrait');
+    expect(manifest.orientation).toBe('portrait-primary');
     expect(manifest.icons).toHaveLength(2);
   });
 
