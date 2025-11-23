@@ -8,9 +8,9 @@ export class ScorePopup {
         this.vy = -2; // Float up
         this.ctx = ctx;
     }
-    update() {
-        this.y += this.vy;
-        this.life -= 0.02;
+    update(deltaTime = 1) {
+        this.y += this.vy * deltaTime;
+        this.life -= 0.02 * deltaTime;
     }
     draw(ctx) {
         ctx.save();

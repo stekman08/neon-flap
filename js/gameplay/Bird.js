@@ -13,7 +13,7 @@ export class Bird {
 
         this.y = canvas.height / 2;
         this.velocity = 0;
-        this.exhaust = []; // Particle based exhaust instead of line trail
+        this.exhaust = []; // Particle based exhaust
     }
 
     /**
@@ -97,9 +97,9 @@ export class Bird {
         ctx.restore();
     }
 
-    update(gameHue) {
-        this.velocity += GameConfig.gravity;
-        this.y += this.velocity;
+    update(gameHue, deltaTime = 1) {
+        this.velocity += GameConfig.gravity * deltaTime;
+        this.y += this.velocity * deltaTime;
 
         // Calculate Engine Position for Exhaust
         const centerX = this.x + this.width / 2;
@@ -125,10 +125,10 @@ export class Bird {
         // Update Exhaust
         for (let i = 0; i < this.exhaust.length; i++) {
             let p = this.exhaust[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.life -= 0.04; // Fade out
-            p.size *= 0.95; // Shrink
+            p.x += p.vx * deltaTime;
+            p.y += p.vy * deltaTime;
+            p.life -= 0.04 * deltaTime; // Fade out
+            p.size *= Math.pow(0.95, deltaTime); // Shrink
             if (p.life <= 0) {
                 this.exhaust.splice(i, 1);
                 i--;

@@ -10,9 +10,9 @@ export class SynthGrid {
         this.gridSize = GameConfig.scaleWidth(40); // 10% of width
     }
 
-    update(currentPipeSpeed, gameHue) {
+    update(currentPipeSpeed, gameHue, deltaTime = 1) {
         this.speed = currentPipeSpeed; // Update speed dynamically
-        this.offset = (this.offset + this.speed) % this.gridSize;
+        this.offset = (this.offset + this.speed * deltaTime) % this.gridSize;
     }
 
     draw(ctx, gameHue) {

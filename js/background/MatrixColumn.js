@@ -12,8 +12,8 @@ export class MatrixColumn {
         this.charSpacing = GameConfig.scaleHeight(20); // ~3.3% of height
         this.resetOffset = GameConfig.scaleHeight(20);
     }
-    update(gameHue) {
-        this.y += this.speed;
+    update(gameHue, deltaTime = 1) {
+        this.y += this.speed * deltaTime;
         if (this.y - this.len * this.charSpacing > this.canvas.height) {
             this.y = -this.resetOffset;
             this.speed = Math.random() * GameConfig.scaleHeight(3) + GameConfig.scaleHeight(1);
