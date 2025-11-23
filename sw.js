@@ -1,3 +1,4 @@
+// Version: 5209a71 • 2025-11-23 21:26
 // Cache name will be set dynamically based on version
 let CACHE_NAME = 'neon-flap-v1'; // fallback
 
@@ -9,6 +10,7 @@ const ASSETS_TO_CACHE = [
   '/js/gameplay/GameLoop.js',
   '/js/gameplay/Bird.js',
   '/js/gameplay/Pipe.js',
+  '/js/gameplay/ParticleSystem.js',
   '/js/effects/Particle.js',
   '/js/effects/ParticlePool.js',
   '/js/background/Star.js',
@@ -17,9 +19,11 @@ const ASSETS_TO_CACHE = [
   '/js/background/MatrixColumn.js',
   '/js/scoring/ScorePopup.js',
   '/js/ai/AIController.js',
+  '/js/audio/AudioController.js',
+  '/js/input/InputHandler.js',
   '/js/config/GameConfig.js',
   '/js/config/constants.js',
-  '/js/viewport/ViewportManager.js',
+  '/js/config/ViewportManager.js',
   '/js/debug/PerformanceMonitor.js',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

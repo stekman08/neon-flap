@@ -529,6 +529,46 @@ button:not(.btn-neon):hover {
     text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
+/* VCR OSD (On-Screen Display) */
+.music-osd {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 2px 2px 0px #000;
+    pointer-events: none;
+    z-index: 200;
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: opacity 0.2s;
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+}
+
+.music-osd.active {
+    opacity: 1;
+    transform: scaleY(1);
+    animation: vcr-flicker 0.15s infinite;
+}
+
+@keyframes vcr-flicker {
+    0% {
+        opacity: 0.9;
+    }
+
+    50% {
+        opacity: 1.0;
+    }
+
+    100% {
+        opacity: 0.8;
+    }
+}
+
 /* ==========================================
    Responsive Mobile/Desktop Styles
    ========================================== */
