@@ -1,12 +1,13 @@
 import { GameConfig } from '../config/GameConfig.js';
 
 export class Bird {
-    constructor(canvas, ctx, gameHue, createParticles, gameOver) {
+    constructor(canvas, ctx, gameHue, createParticles, gameOver, playJumpSound) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.gameHue = gameHue;
         this.createParticles = createParticles;
         this.gameOver = gameOver;
+        this.playJumpSound = playJumpSound;
 
         // Use proportional coordinates from GameConfig
         this.updateDimensions();
@@ -152,5 +153,7 @@ export class Bird {
         this.velocity = GameConfig.jumpStrength;
         // Burst of particles on jump
         this.createParticles(this.x, this.y + this.height / 2, 5, '#fff');
+        // Play sound
+        if (this.playJumpSound) this.playJumpSound();
     }
 }
