@@ -1,5 +1,13 @@
+:root {
+    --sat: env(safe-area-inset-top);
+    --sar: env(safe-area-inset-right);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+}
+
 * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -10,9 +18,12 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    /* Mobile viewport fix */
+    height: 100dvh;
     font-family: 'Orbitron', sans-serif;
     overflow: hidden;
     color: #fff;
+    overscroll-behavior: none;
 }
 
 .game-container {
@@ -528,12 +539,12 @@ button:not(.btn-neon):hover {
         justify-content: flex-start;
         align-items: flex-start;
         overflow: hidden;
-        /* Prevent scrolling on mobile */
     }
 
     .game-container {
         width: 100vw;
         height: 100vh;
+        height: 100dvh;
         box-shadow: none;
         border-radius: 0;
         position: fixed;
@@ -544,6 +555,7 @@ button:not(.btn-neon):hover {
     canvas {
         width: 100vw !important;
         height: 100vh !important;
+        height: 100dvh !important;
         position: fixed;
         top: 0;
         left: 0;
@@ -552,28 +564,49 @@ button:not(.btn-neon):hover {
     /* Scale UI elements proportionally on mobile */
     h1 {
         font-size: clamp(32px, 8vw, 48px);
+        margin-top: var(--sat);
     }
 
     p {
         font-size: clamp(14px, 4vw, 18px);
     }
 
+    /* Larger touch targets */
     button {
         font-size: clamp(16px, 4.5vw, 20px);
-        padding: clamp(10px, 3vw, 15px) clamp(30px, 8vw, 40px);
+        padding: clamp(15px, 4vw, 20px) clamp(30px, 8vw, 40px);
+        min-height: 44px;
+        /* Apple Human Interface Guidelines */
+    }
+
+    .btn-neon {
+        width: 80%;
+        max-width: 300px;
+    }
+
+    .controls-row {
+        margin-bottom: var(--sab);
+    }
+
+    .btn-icon {
+        width: 60px;
+        height: 60px;
     }
 
     #score-hud {
         font-size: clamp(32px, 8vw, 40px);
-        top: env(safe-area-inset-top, 20px);
-        /* iOS safe area support */
-        right: env(safe-area-inset-right, 20px);
+        top: max(20px, var(--sat));
+        /* Use safe area or 20px */
+        right: max(20px, var(--sar));
         left: auto;
-        /* Override centered position */
         width: auto;
-        /* Override full width */
         text-align: right;
         padding-right: 20px;
+    }
+
+    .version-info {
+        bottom: max(10px, var(--sab));
+        right: max(15px, var(--sar));
     }
 }
 
