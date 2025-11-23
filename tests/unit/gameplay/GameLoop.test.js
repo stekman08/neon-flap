@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameLoop } from '../../../public/js/gameplay/GameLoop.js';
+import { INITIAL_PIPE_SPEED, MAX_SPEED, PIPE_SPAWN_RATE } from '../../../public/js/config/constants.js';
 
 // Mock ScorePopup
 vi.mock('../../../public/js/scoring/ScorePopup.js', () => ({
@@ -11,7 +12,7 @@ vi.mock('../../../public/js/scoring/ScorePopup.js', () => ({
       this.life = 1;
     }
     update() { this.life -= 0.02; }
-    draw() {}
+    draw() { }
   }
 }));
 
@@ -71,7 +72,7 @@ describe('GameLoop', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
       game.init();
 
-      expect(game.currentPipeSpeed).toBe(3); // INITIAL_PIPE_SPEED
+      expect(game.currentPipeSpeed).toBe(INITIAL_PIPE_SPEED);
       expect(game.currentPipeGap).toBeCloseTo(170, 0);  // GameConfig.initialPipeGap (~169.8)
     });
 
@@ -141,8 +142,8 @@ describe('GameLoop', () => {
 
       game.gameOver();
 
-      const stats = game.particlePool.getStats();
-      expect(stats.active).toBe(50);
+      // Check particle count directly from the new ParticleSystem
+      expect(game.particleSystem.particles.length).toBe(50);
     });
   });
 
@@ -226,7 +227,7 @@ describe('GameLoop', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
       game.init();
       game.gameState = 'PLAYING';
-      game.currentPipeSpeed = 29; // Near max
+      game.currentPipeSpeed = MAX_SPEED - 1; // Near max
 
       // Simulate passing many pipes
       game.pipesPassed = 99;
@@ -242,7 +243,7 @@ describe('GameLoop', () => {
 
       game.update(1);
 
-      expect(game.currentPipeSpeed).toBeLessThanOrEqual(30); // MAX_SPEED
+      expect(game.currentPipeSpeed).toBeLessThanOrEqual(MAX_SPEED);
     });
   });
 
@@ -257,8 +258,8 @@ describe('GameLoop', () => {
       game.bird.velocity = 0;
 
       // Run update for spawn rate frames with deltaTime = 1 (simulate 60fps)
-      // PIPE_SPAWN_RATE = 120, so need at least 120 frames
-      for (let i = 0; i < 130; i++) {
+      // PIPE_SPAWN_RATE frames needed to spawn a pipe
+      for (let i = 0; i < PIPE_SPAWN_RATE + 10; i++) {
         game.update(1);
         // Reset bird state to prevent it from falling out of bounds
         game.bird.y = 300;
@@ -278,22 +279,20 @@ describe('GameLoop', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
       game.init();
 
-      // Create a particle
-      game.createParticles(100, 100, 1, '#fff');
+      // Create a particle (using createJumpParticles which adds 10 particles)
+      game.particleSystem.createJumpParticles(100, 100);
 
-      // Get initial stats
-      let stats = game.particlePool.getStats();
-      expect(stats.active).toBe(1);
+      // Get initial count
+      const initialCount = game.particleSystem.particles.length;
+      expect(initialCount).toBe(10);
 
-      // Manually set particle life to 0
-      game.particlePool.active[0].life = 0;
+      // Manually set particle life to 0 for all particles
+      game.particleSystem.particles.forEach(p => p.life = 0);
 
-      // Update should remove dead particle
+      // Update should remove dead particles
       game.update(1);
 
-      stats = game.particlePool.getStats();
-      expect(stats.active).toBe(0);
-      expect(stats.pooled).toBeGreaterThan(0); // Particle returned to pool
+      expect(game.particleSystem.particles.length).toBe(0);
     });
   });
 
@@ -313,7 +312,7 @@ describe('GameLoop', () => {
         topHeight: 200,
         bottomY: 400,
         passed: false,
-        update: function(speed, hue, deltaTime) {
+        update: function (speed, hue, deltaTime) {
           this.x -= speed * deltaTime;
         }
       }];
@@ -340,7 +339,7 @@ describe('GameLoop', () => {
         topHeight: 200,
         bottomY: 400,
         passed: false,
-        update: function(speed, hue, deltaTime) {
+        update: function (speed, hue, deltaTime) {
           this.x -= speed * deltaTime;
         }
       }];
@@ -367,8 +366,8 @@ describe('GameLoop', () => {
       game60.bird.velocity = 0;
 
       // Run enough frames to spawn at least one pipe
-      // PIPE_SPAWN_RATE = 120 frames at 60fps = 2000ms
-      for (let i = 0; i < 130; i++) {
+      // PIPE_SPAWN_RATE frames at 60fps
+      for (let i = 0; i < PIPE_SPAWN_RATE + 10; i++) {
         game60.update(1);
         game60.bird.y = 300;
         game60.bird.velocity = 0;
@@ -383,7 +382,7 @@ describe('GameLoop', () => {
       game120.bird.velocity = 0;
 
       // Run twice as many frames at half deltaTime (same real time)
-      for (let i = 0; i < 260; i++) {
+      for (let i = 0; i < (PIPE_SPAWN_RATE + 10) * 2; i++) {
         game120.update(0.5);
         game120.bird.y = 300;
         game120.bird.velocity = 0;
