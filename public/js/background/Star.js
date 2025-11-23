@@ -10,8 +10,8 @@ export class Star {
         this.speed = Math.random() * GameConfig.scaleWidth(0.5) + GameConfig.scaleWidth(0.1); // 0.025%-0.15% of width
     }
 
-    update() {
-        this.x -= this.speed;
+    update(deltaTime = 1) {
+        this.x -= this.speed * deltaTime;
         if (this.x < 0) {
             this.x = this.canvas.width;
             this.y = Math.random() * this.canvas.height;

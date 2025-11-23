@@ -1,6 +1,7 @@
 {
   "name": "flappy-bird-clone",
   "version": "1.0.0",
+  "type": "module",
   "description": "A flashy Flappy Bird clone served via Node.js",
   "main": "server.js",
   "scripts": {

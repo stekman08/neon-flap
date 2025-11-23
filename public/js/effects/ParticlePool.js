@@ -51,10 +51,10 @@ export class ParticlePool {
     /**
      * Update all active particles and auto-release dead ones
      */
-    update() {
+    update(deltaTime = 1) {
         for (let i = this.active.length - 1; i >= 0; i--) {
             const particle = this.active[i];
-            particle.update();
+            particle.update(deltaTime);
 
             // Auto-release dead particles
             if (particle.life <= 0) {

@@ -163,7 +163,7 @@ describe('GameLoop', () => {
         update: vi.fn()
       }];
 
-      game.update();
+      game.update(1);
 
       expect(game.score).toBe(1);
       expect(game.pipes[0].passed).toBe(true);
@@ -190,7 +190,7 @@ describe('GameLoop', () => {
         update: vi.fn()
       }];
 
-      game.update();
+      game.update(1);
 
       expect(game.score).toBe(2);
     });
@@ -216,7 +216,7 @@ describe('GameLoop', () => {
         update: vi.fn()
       }];
 
-      game.update();
+      game.update(1);
 
       expect(game.pipesPassed).toBe(3);
       expect(game.currentPipeSpeed).toBeGreaterThan(initialSpeed);
@@ -240,7 +240,7 @@ describe('GameLoop', () => {
         draw: vi.fn()
       }];
 
-      game.update();
+      game.update(1);
 
       expect(game.currentPipeSpeed).toBeLessThanOrEqual(30); // MAX_SPEED
     });
@@ -252,9 +252,17 @@ describe('GameLoop', () => {
       game.init();
       game.gameState = 'PLAYING';
 
-      // Run update for spawn rate frames
-      for (let i = 0; i < 100; i++) {
-        game.update();
+      // Keep bird in a safe position to prevent game over
+      game.bird.y = 300;
+      game.bird.velocity = 0;
+
+      // Run update for spawn rate frames with deltaTime = 1 (simulate 60fps)
+      // PIPE_SPAWN_RATE = 120, so need at least 120 frames
+      for (let i = 0; i < 130; i++) {
+        game.update(1);
+        // Reset bird state to prevent it from falling out of bounds
+        game.bird.y = 300;
+        game.bird.velocity = 0;
       }
 
       expect(game.pipes.length).toBeGreaterThan(0);
@@ -281,7 +289,7 @@ describe('GameLoop', () => {
       game.particlePool.active[0].life = 0;
 
       // Update should remove dead particle
-      game.update();
+      game.update(1);
 
       stats = game.particlePool.getStats();
       expect(stats.active).toBe(0);

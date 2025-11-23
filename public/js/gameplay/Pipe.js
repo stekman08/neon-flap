@@ -63,7 +63,7 @@ export class Pipe {
         ctx.restore();
     }
 
-    update(currentPipeSpeed, gameHue) {
-        this.x -= currentPipeSpeed;
+    update(currentPipeSpeed, gameHue, deltaTime = 1) {
+        this.x -= currentPipeSpeed * deltaTime;
     }
 }

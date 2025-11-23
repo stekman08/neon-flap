@@ -14,10 +14,10 @@ export class Particle {
         this.life = 1.0;
     }
 
-    update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        this.life -= 0.03;
+    update(deltaTime = 1) {
+        this.x += this.speedX * deltaTime;
+        this.y += this.speedY * deltaTime;
+        this.life -= 0.03 * deltaTime;
     }
 
     draw(ctx) {

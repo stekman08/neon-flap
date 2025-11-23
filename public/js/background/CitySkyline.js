@@ -19,9 +19,9 @@ export class CitySkyline {
         this.nextX += width;
     }
 
-    update(currentPipeSpeed, gameHue) {
+    update(currentPipeSpeed, gameHue, deltaTime = 1) {
         // Move buildings slower than pipes for parallax (0.5x speed)
-        const speed = currentPipeSpeed * 0.5;
+        const speed = currentPipeSpeed * 0.5 * deltaTime;
 
         this.buildings.forEach(b => {
             b.x -= speed;

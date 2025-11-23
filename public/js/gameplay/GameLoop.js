@@ -34,6 +34,10 @@ export class GameLoop {
         this.isAutoPlay = false;
         this.lastPipeGapCenter = 0;
 
+        // Delta time tracking for frame rate independence
+        this.lastTimestamp = 0;
+        this.timeSinceLastPipe = 0;
+
         // Arrays
         this.bird = null;
         this.pipes = [];
@@ -66,6 +70,8 @@ export class GameLoop {
         this.gameHue = 0;
         this.isAutoPlay = false;
         this.lastPipeGapCenter = this.canvas.height / 2; // Init center
+        this.lastTimestamp = 0;
+        this.timeSinceLastPipe = 0;
         this.uiElements.scoreHud.innerText = this.score;
 
         // Reset difficulty
@@ -109,38 +115,40 @@ export class GameLoop {
         this.uiElements.gameOverScreen.classList.add('active');
     }
 
-    update() {
+    update(deltaTime) {
         this.performanceMonitor.markUpdateStart();
 
         // Background
-        this.gameHue += 0.5; // Cycle colors
-        this.stars.forEach(star => star.update());
-        this.city.update(this.currentPipeSpeed, this.gameHue);
-        this.synthGrid.update(this.currentPipeSpeed, this.gameHue);
-        this.matrixRain.forEach(col => col.update(this.gameHue));
+        this.gameHue += 0.5 * deltaTime; // Cycle colors
+        this.stars.forEach(star => star.update(deltaTime));
+        this.city.update(this.currentPipeSpeed, this.gameHue, deltaTime);
+        this.synthGrid.update(this.currentPipeSpeed, this.gameHue, deltaTime);
+        this.matrixRain.forEach(col => col.update(this.gameHue, deltaTime));
 
         if (this.gameState === 'PLAYING') {
             if (this.isAutoPlay) {
                 AIController.performAI(this.bird, this.pipes, this.currentPipeGap, this.canvas);
             }
-            this.bird.update(this.gameHue);
+            this.bird.update(this.gameHue, deltaTime);
 
-            // Pipe Spawning
-            // Adjust spawn rate based on speed
+            // Pipe Spawning - time-based instead of frame-based
+            // Convert PIPE_SPAWN_RATE from frames to milliseconds (assuming 60fps base)
+            const baseSpawnInterval = (PIPE_SPAWN_RATE / 60) * 1000; // ms
+            const currentSpawnInterval = Math.max(1000, baseSpawnInterval * (INITIAL_PIPE_SPEED / this.currentPipeSpeed));
 
-            // Let's use a dynamic spawn rate
-            const currentSpawnRate = Math.max(60, Math.floor(PIPE_SPAWN_RATE * (INITIAL_PIPE_SPEED / this.currentPipeSpeed)));
+            this.timeSinceLastPipe += (16.67 * deltaTime); // Add elapsed time
 
-            if (this.frames % currentSpawnRate === 0) {
+            if (this.timeSinceLastPipe >= currentSpawnInterval) {
                 this.pipes.push(new Pipe(this.canvas, this.ctx, this.currentPipeGap, GameConfig.minPipeGap, this.lastPipeGapCenter, this.gameHue, (center) => {
                     this.lastPipeGapCenter = center;
                 }));
+                this.timeSinceLastPipe = 0;
             }
 
             // Pipe Logic
             for (let i = 0; i < this.pipes.length; i++) {
                 let p = this.pipes[i];
-                p.update(this.currentPipeSpeed, this.gameHue);
+                p.update(this.currentPipeSpeed, this.gameHue, deltaTime);
 
                 // Collision Detection
                 if (
@@ -188,11 +196,11 @@ export class GameLoop {
         }
 
         // Particles (managed by pool)
-        this.particlePool.update();
+        this.particlePool.update(deltaTime);
 
         // Score Popups
         for (let i = 0; i < this.scorePopups.length; i++) {
-            this.scorePopups[i].update();
+            this.scorePopups[i].update(deltaTime);
             if (this.scorePopups[i].life <= 0) {
                 this.scorePopups.splice(i, 1);
                 i--;
@@ -238,9 +246,18 @@ export class GameLoop {
         this.performanceMonitor.markDrawEnd();
     }
 
-    loop() {
+    loop(timestamp = 0) {
         this.performanceMonitor.startFrame();
-        this.update();
+
+        // Calculate delta time (normalized to 60fps baseline)
+        if (this.lastTimestamp === 0) {
+            this.lastTimestamp = timestamp;
+        }
+        const rawDelta = timestamp - this.lastTimestamp;
+        const deltaTime = rawDelta / 16.67; // Normalize to 60fps (1.0 = 60fps, 2.0 = 120fps, etc)
+        this.lastTimestamp = timestamp;
+
+        this.update(deltaTime);
         this.draw();
 
         // Update pool stats for monitoring
