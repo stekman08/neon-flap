@@ -32,20 +32,21 @@
             <div id="start-screen" class="screen active">
                 <h1>NEON FLAP</h1>
                 <p>Press SPACE or TAP to Jump</p>
-                <button id="start-btn">START GAME</button>
-                <button id="ai-btn" style="margin-top: 10px; background: #f0f; box-shadow: 0 0 10px #f0f;">WATCH
-                    AI</button>
-                <button id="install-btn" class="install-btn" style="display: none;">
-                    <span class="install-icon">📥</span>
-                    INSTALL APP
-                </button>
+                <div class="button-group">
+                    <button id="start-btn" class="btn-neon btn-primary">START GAME</button>
+                    <button id="ai-btn" class="btn-neon btn-secondary">WATCH AI</button>
+                    <button id="install-btn" class="btn-neon btn-accent install-btn" style="display: none;">
+                        <span class="install-icon">📥</span>
+                        INSTALL APP
+                    </button>
+                </div>
                 <div id="version-info" class="version-info"></div>
             </div>
             <div id="game-over-screen" class="screen">
                 <h1>GAME OVER</h1>
                 <p>Score: <span id="final-score">0</span></p>
                 <p>Best: <span id="best-score">0</span></p>
-                <button id="restart-btn">TRY AGAIN</button>
+                <button id="restart-btn" class="btn-neon btn-primary">TRY AGAIN</button>
             </div>
             <div id="score-hud">0</div>
         </div>
