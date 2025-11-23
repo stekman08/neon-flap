@@ -11,16 +11,22 @@ export class AIController {
         }
 
         let targetY = canvas.height / 2;
+
         if (nextPipe) {
-            // Target the center of the gap
-            targetY = nextPipe.bottomY - (currentPipeGap / 2);
-
-
+            // Target the "Safe Zone" - slightly below center to allow headroom for jump arc
+            const gapCenter = nextPipe.bottomY - (currentPipeGap / 2);
+            const safeZoneOffset = currentPipeGap * 0.15; // Target 15% lower than center
+            targetY = gapCenter + safeZoneOffset;
         } else {
             // No pipe, stay in middle
             targetY = canvas.height / 2;
-        }    // Jump if we are below the target, or if we are about to fall below it
-        if (bird.y + bird.velocity > targetY) {
+        }
+
+        const isBelowTarget = (bird.y > targetY);
+        const isFalling = (bird.velocity >= 0);
+        const isCriticallyLow = (bird.y > canvas.height - 100);
+
+        if (isBelowTarget && (isFalling || isCriticallyLow)) {
             bird.jump();
         }
     }
