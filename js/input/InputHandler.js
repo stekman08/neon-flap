@@ -15,8 +15,15 @@ export class InputHandler {
 
         // Touch
         this.game.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevent scrolling
+            e.preventDefault(); // Prevent scrolling/zooming
             this.handleInput();
+        }, { passive: false });
+
+        // Prevent default touch actions on the entire document to stop rubber-banding
+        document.addEventListener('touchmove', (e) => {
+            if (e.target === this.game.canvas) {
+                e.preventDefault();
+            }
         }, { passive: false });
 
         // Mouse
