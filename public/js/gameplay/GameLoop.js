@@ -213,7 +213,7 @@ export class GameLoop {
                         this.score += 2;
                         this.scorePopups.push(new ScorePopup(this.bird.x, this.bird.y - 20, "+2", this.ctx, "#ffd700"));
                         this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2); // Gold explosion
-                        if (this.audioController) this.audioController.playScore(); // Play sound
+                        if (this.audioController) this.audioController.playPerfectScore(); // Play perfect sound
                     } else {
                         this.score++;
                         this.scorePopups.push(new ScorePopup(this.bird.x, this.bird.y - 20, "+1", this.ctx));

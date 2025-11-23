@@ -152,6 +152,37 @@ export class AudioController {
         osc2.stop(now + 0.2);
     }
 
+    playPerfectScore() {
+        if (this.isMuted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Major Triad Arpeggio (C5 - E5 - G5)
+        // C5 = 523.25, E5 = 659.25, G5 = 783.99
+        const notes = [523.25, 659.25, 783.99];
+
+        notes.forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+
+            const startTime = now + (i * 0.05); // Staggered start
+
+            // Bell-like envelope
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(0.15, startTime + 0.02); // Fast attack
+            gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5); // Long release
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            gain.connect(this.delayNode); // Add delay for "shimmer"
+
+            osc.start(startTime);
+            osc.stop(startTime + 0.5);
+        });
+    }
+
     playCrash() {
         if (this.isMuted || !this.ctx) return;
         const now = this.ctx.currentTime;
