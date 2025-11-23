@@ -572,5 +572,85 @@ describe('GameLoop', () => {
       expect(hue).toBeGreaterThan(25);
       expect(hue).toBeLessThan(200); // Not still at cyan
     });
+
+    it('should use track hue when music is playing', () => {
+      const mockAudioController = {
+        isPlayingMusic: true,
+        getCurrentTrack: vi.fn(() => ({
+          name: 'Test Track',
+          hue: 120 // Green
+        }))
+      };
+
+      const game = new GameLoop(canvas, ctx, uiElements, mockAudioController);
+      game.init();
+      game.gameState = 'PLAYING';
+
+      // Run updates to allow interpolation towards track hue
+      for (let i = 0; i < 100; i++) {
+        game.update(1);
+        game.bird.y = 300;
+        game.bird.velocity = 0;
+      }
+
+      // gameHue should be moving towards 120 (green)
+      expect(game.gameHue).toBeGreaterThan(100);
+      expect(game.gameHue).toBeLessThan(140);
+      expect(mockAudioController.getCurrentTrack).toHaveBeenCalled();
+    });
+
+    it('should use score-based hue when music is not playing', () => {
+      const mockAudioController = {
+        isPlayingMusic: false,
+        getCurrentTrack: vi.fn(() => ({
+          name: 'Test Track',
+          hue: 120 // This should be ignored
+        }))
+      };
+
+      const game = new GameLoop(canvas, ctx, uiElements, mockAudioController);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.score = 30; // Should target magenta (300)
+
+      // Run updates
+      for (let i = 0; i < 100; i++) {
+        game.update(1);
+        game.bird.y = 300;
+        game.bird.velocity = 0;
+      }
+
+      // Should target magenta (300), not track hue (120)
+      expect(game.gameHue).toBeGreaterThan(250);
+      expect(game.gameHue).toBeLessThan(350);
+      expect(mockAudioController.getCurrentTrack).not.toHaveBeenCalled();
+    });
+
+    it('should prioritize music hue over score hue', () => {
+      const mockAudioController = {
+        isPlayingMusic: true,
+        getCurrentTrack: vi.fn(() => ({
+          name: 'Test Track',
+          hue: 60 // Yellow
+        }))
+      };
+
+      const game = new GameLoop(canvas, ctx, uiElements, mockAudioController);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.score = 60; // This would normally trigger gold (45), but music should override
+
+      // Run updates
+      for (let i = 0; i < 100; i++) {
+        game.update(1);
+        game.bird.y = 300;
+        game.bird.velocity = 0;
+      }
+
+      // Should use music hue (60) not score hue (45)
+      expect(game.gameHue).toBeGreaterThan(40);
+      expect(game.gameHue).toBeLessThan(80);
+      expect(mockAudioController.getCurrentTrack).toHaveBeenCalled();
+    });
   });
 });
