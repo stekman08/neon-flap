@@ -128,6 +128,11 @@ export class GameLoop {
         if (this.audioController) this.audioController.playCrash();
         this.shake = 20; // Trigger screen shake
 
+        // Haptic feedback (heavy)
+        if (navigator.vibrate) {
+            navigator.vibrate(200);
+        }
+
         this.uiElements.gameOverScreen.classList.add('active');
 
         if (!this.isAutoPlay && this.score > this.highScore) {

@@ -47,7 +47,7 @@ const versionInfo = document.getElementById('version-info');
 // Helper function to ensure audio context is ready
 function ensureAudioReady() {
     audioController.init();
-    if (!audioController.isMuted && audioController.ctx && audioController.ctx.state === 'suspended') {
+    if (audioController.ctx && audioController.ctx.state === 'suspended') {
         audioController.ctx.resume();
     }
 }
@@ -60,13 +60,17 @@ startBtn.addEventListener('click', (e) => {
     game.start();
 });
 
-// Mute Button
+// Mute Button (Controls SFX only now)
+// Initialize button state based on default (Unmuted)
+muteBtn.classList.add('unmuted');
+muteIcon.textContent = '🔊';
+
 muteBtn.addEventListener('click', (e) => {
     e.stopPropagation(); // Prevent game start if clicking mute
-    const isMuted = audioController.toggleMute();
-    muteIcon.textContent = isMuted ? '🔇' : '🔊';
+    const isSfxMuted = audioController.toggleMute();
+    muteIcon.textContent = isSfxMuted ? '🔇' : '🔊';
 
-    if (isMuted) {
+    if (isSfxMuted) {
         muteBtn.classList.remove('unmuted');
     } else {
         muteBtn.classList.add('unmuted');

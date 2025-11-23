@@ -9,7 +9,7 @@ const TEMPO_BPM = 110;
 export class AudioController {
     constructor() {
         this.ctx = null;
-        this.isMuted = true; // Default muted
+        this.isSfxMuted = false; // Default SFX ON
         this.initialized = false;
         this.lastJumpTime = 0; // Throttling for jump sound
 
@@ -21,10 +21,11 @@ export class AudioController {
 
         // Effects
         this.masterGain = null;
+        this.sfxGain = null;   // New: Dedicated SFX channel
+        this.musicGain = null; // New: Dedicated Music channel
         this.delayNode = null;
         this.feedbackNode = null;
 
-        // Chromatic scale frequencies
         this.scale = {
             C2: 65.41, Db2: 69.30, D2: 73.42, Eb2: 77.78, E2: 82.41, F2: 87.31,
             Gb2: 92.50, G2: 98.00, Ab2: 103.83, A2: 110.00, Bb2: 116.54, B2: 123.47,
@@ -62,7 +63,18 @@ export class AudioController {
 
             // Master Chain
             this.masterGain = this.ctx.createGain();
-            this.masterGain.gain.value = MASTER_VOLUME;
+            this.masterGain.gain.value = 1.0; // Master is full, control via sub-buses
+
+            // Sub-buses
+            this.sfxGain = this.ctx.createGain();
+            this.sfxGain.gain.value = this.isSfxMuted ? 0 : MASTER_VOLUME;
+
+            this.musicGain = this.ctx.createGain();
+            this.musicGain.gain.value = MASTER_VOLUME;
+
+            // Connect Sub-buses to Master
+            this.sfxGain.connect(this.masterGain);
+            this.musicGain.connect(this.masterGain);
 
             // Delay Effect (Stereo Echo)
             this.delayNode = this.ctx.createDelay();
@@ -78,7 +90,9 @@ export class AudioController {
             this.delayNode.connect(this.feedbackNode);
             this.feedbackNode.connect(this.delayNode);
             this.delayNode.connect(this.delayGain);
-            this.delayGain.connect(this.masterGain);
+
+            // Delay output goes to Music Bus (mostly used for music/ambience)
+            this.delayGain.connect(this.musicGain);
 
             this.masterGain.connect(this.ctx.destination);
 
@@ -89,22 +103,22 @@ export class AudioController {
     }
 
     toggleMute() {
-        this.isMuted = !this.isMuted;
-        if (!this.isMuted && !this.initialized) {
+        this.isSfxMuted = !this.isSfxMuted;
+        if (!this.initialized) {
             this.init();
             if (this.ctx && this.ctx.state === 'suspended') {
                 this.ctx.resume();
             }
         }
-        // Immediate mute handling
-        if (this.ctx && this.masterGain) {
-            this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : MASTER_VOLUME, this.ctx.currentTime, 0.1);
+        // Immediate mute handling for SFX channel only
+        if (this.ctx && this.sfxGain) {
+            this.sfxGain.gain.setTargetAtTime(this.isSfxMuted ? 0 : MASTER_VOLUME, this.ctx.currentTime, 0.1);
         }
-        return this.isMuted;
+        return this.isSfxMuted;
     }
 
     playJump() {
-        if (this.isMuted || !this.ctx) return;
+        if (this.isSfxMuted || !this.ctx) return;
 
         const now = this.ctx.currentTime;
         const throttleSeconds = JUMP_THROTTLE_MS / 1000;
@@ -122,14 +136,14 @@ export class AudioController {
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
 
         osc.connect(gain);
-        gain.connect(this.masterGain); // Route to master
+        gain.connect(this.sfxGain); // Route to SFX bus
 
         osc.start();
         osc.stop(now + 0.1);
     }
 
     playScore() {
-        if (this.isMuted || !this.ctx) return;
+        if (this.isSfxMuted || !this.ctx) return;
         const now = this.ctx.currentTime;
 
         const osc1 = this.ctx.createOscillator();
@@ -151,7 +165,7 @@ export class AudioController {
 
         osc1.connect(gain);
         osc2.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.sfxGain); // Route to SFX bus
 
         osc1.start();
         osc2.start();
@@ -160,7 +174,7 @@ export class AudioController {
     }
 
     playPerfectScore() {
-        if (this.isMuted || !this.ctx) return;
+        if (this.isSfxMuted || !this.ctx) return;
         const now = this.ctx.currentTime;
 
         // Major Triad Arpeggio (C5 - E5 - G5)
@@ -182,7 +196,7 @@ export class AudioController {
             gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5); // Long release
 
             osc.connect(gain);
-            gain.connect(this.masterGain);
+            gain.connect(this.sfxGain); // Route to SFX bus
             gain.connect(this.delayNode); // Add delay for "shimmer"
 
             osc.start(startTime);
@@ -191,7 +205,7 @@ export class AudioController {
     }
 
     playCrash() {
-        if (this.isMuted || !this.ctx) return;
+        if (this.isSfxMuted || !this.ctx) return;
         const now = this.ctx.currentTime;
 
         // White noise buffer
@@ -468,7 +482,7 @@ export class AudioController {
 
         osc.connect(filter);
         filter.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.musicGain); // Route to Music bus
 
         osc.start(time);
         osc.stop(time + duration);
@@ -503,7 +517,7 @@ export class AudioController {
 
         osc1.connect(gain);
         osc2.connect(gain);
-        gain.connect(this.masterGain);
+        gain.connect(this.musicGain); // Route to Music bus
         // Also send to delay for space
         gain.connect(this.delayNode);
 
