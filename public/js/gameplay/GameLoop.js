@@ -145,12 +145,22 @@ export class GameLoop {
         this.performanceMonitor.markUpdateStart();
 
         // Background
-        // Reactive Themes: Hue shifts based on score
+        // Reactive Themes: Hue shifts based on score OR music
         let targetHue = 180; // Default Cyan/Blue
-        if (this.score > 50) {
-            targetHue = 45; // Gold/Fire
-        } else if (this.score > 25) {
-            targetHue = 300; // Magenta/Purple
+
+        if (this.audioController && this.audioController.isPlayingMusic) {
+            // Music controls the vibe
+            const track = this.audioController.getCurrentTrack();
+            if (track) {
+                targetHue = track.hue;
+            }
+        } else {
+            // Score controls the vibe (fallback)
+            if (this.score > 50) {
+                targetHue = 45; // Gold/Fire
+            } else if (this.score > 25) {
+                targetHue = 300; // Magenta/Purple
+            }
         }
 
         // Smooth interpolation towards target hue with breathing oscillation

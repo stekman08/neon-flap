@@ -74,15 +74,37 @@ muteBtn.addEventListener('click', (e) => {
 });
 
 // Music Button
-const musicBtn = document.getElementById('music-btn');
-musicBtn.addEventListener('click', (e) => {
+const musicOsd = document.getElementById('music-osd');
+const musicToggleBtn = document.getElementById('music-btn');
+
+musicToggleBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const isPlaying = audioController.toggleMusic();
 
     if (isPlaying) {
-        musicBtn.classList.add('playing');
+        musicToggleBtn.classList.add('playing');
+
+        // Show VCR OSD
+        const track = audioController.getCurrentTrack();
+        const index = audioController.currentTrackIndex + 1;
+        const total = audioController.tracks.length;
+        musicOsd.innerText = `▶ PLAY ${index}/${total}: ${track.name.toUpperCase()}`;
+        musicOsd.classList.add('active');
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+            musicOsd.classList.remove('active');
+        }, 3000);
+
     } else {
-        musicBtn.classList.remove('playing');
+        musicToggleBtn.classList.remove('playing');
+
+        // Show Stop OSD
+        musicOsd.innerText = `■ STOP`;
+        musicOsd.classList.add('active');
+        setTimeout(() => {
+            musicOsd.classList.remove('active');
+        }, 1500);
     }
 });
 

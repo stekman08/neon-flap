@@ -26,7 +26,23 @@ try {
     const versionJsonPath = path.join(__dirname, '../public/version.json');
     fs.writeFileSync(versionJsonPath, JSON.stringify(versionInfo, null, 2));
 
+    // Update public/sw.js with version comment to trigger browser update
+    const swPath = path.join(__dirname, '../public/sw.js');
+    let swContent = fs.readFileSync(swPath, 'utf8');
+    const versionComment = `// Version: ${versionInfo.displayWithTime}`;
+
+    // Replace first line or prepend if not present
+    const lines = swContent.split('\n');
+    if (lines[0].startsWith('// Version:')) {
+        lines[0] = versionComment;
+    } else {
+        lines.unshift(versionComment);
+    }
+    swContent = lines.join('\n');
+    fs.writeFileSync(swPath, swContent);
+
     console.log(`✓ Version generated: ${versionInfo.displayFull}`);
+    console.log(`✓ Service Worker updated with version comment`);
 } catch (error) {
     // Fallback if not in a git repo (e.g., deployed without .git)
     const fallbackVersion = {

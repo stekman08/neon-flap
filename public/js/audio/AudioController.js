@@ -24,12 +24,19 @@ export class AudioController {
         this.delayNode = null;
         this.feedbackNode = null;
 
-        // Musical Constants (C Minor: C, D, Eb, F, G, Ab, Bb)
+        // Chromatic scale frequencies
         this.scale = {
-            C2: 65.41, Eb2: 77.78, F2: 87.31, G2: 98.00, Ab2: 103.83, Bb2: 116.54,
-            C3: 130.81, D3: 146.83, Eb3: 155.56, F3: 174.61, G3: 196.00, Ab3: 207.65, Bb3: 233.08,
-            C4: 261.63, D4: 293.66, Eb4: 311.13, F4: 349.23, G4: 392.00, Ab4: 415.30, Bb4: 466.16,
-            C5: 523.25
+            C2: 65.41, Db2: 69.30, D2: 73.42, Eb2: 77.78, E2: 82.41, F2: 87.31,
+            Gb2: 92.50, G2: 98.00, Ab2: 103.83, A2: 110.00, Bb2: 116.54, B2: 123.47,
+
+            C3: 130.81, Db3: 138.59, D3: 146.83, Eb3: 155.56, E3: 164.81, F3: 174.61,
+            Gb3: 185.00, G3: 196.00, Ab3: 207.65, A3: 220.00, Bb3: 233.08, B3: 246.94,
+
+            C4: 261.63, Db4: 277.18, D4: 293.66, Eb4: 311.13, E4: 329.63, F4: 349.23,
+            Gb4: 369.99, G4: 392.00, Ab4: 415.30, A4: 440.00, Bb4: 466.16, B4: 493.88,
+
+            C5: 523.25, Db5: 554.37, D5: 587.33, Eb5: 622.25, E5: 659.25, F5: 698.46,
+            Gb5: 739.99, G5: 783.99, Ab5: 830.61, A5: 880.00, Bb5: 932.33, B5: 987.77
         };
 
         // Chord Progression: Cm -> Ab -> Fm -> G (4 bars each)
@@ -219,6 +226,11 @@ export class AudioController {
         this.isPlayingMusic = true;
         this.beatCount = 0;
         this.nextNoteTime = this.ctx.currentTime + 0.1;
+
+        // Initialize tracks if not already done
+        if (!this.tracks) this.initTracks();
+
+        console.log(`Now Playing: ${this.tracks[this.currentTrackIndex].name}`);
         this.scheduleMusic();
     }
 
@@ -230,6 +242,10 @@ export class AudioController {
     toggleMusic() {
         if (this.isPlayingMusic) {
             this.stopMusic();
+            // Advance track index for next play
+            if (this.tracks) {
+                this.currentTrackIndex = (this.currentTrackIndex + 1) % this.tracks.length;
+            }
             return false;
         } else {
             if (!this.initialized) this.init();
@@ -239,14 +255,107 @@ export class AudioController {
         }
     }
 
+    initTracks() {
+        // Musical Constants
+        const N = this.scale; // Use existing scale definitions
+
+        this.tracks = [
+            {
+                name: "Neon Horizon",
+                hue: 180, // Cyan
+                tempo: 110,
+                progression: [N.C2, N.Ab2, N.F2, N.G2], // Cm -> Ab -> Fm -> G
+                scale: [N.C4, N.Eb4, N.F4, N.G4, N.Bb4], // Cm Pentatonic
+                style: {
+                    bass: 'rolling', // Octave bounce
+                    drums: 'driving', // Standard rock beat
+                    pad: 'sustained', // Full bar chords
+                    lead: 'arpeggio' // Random arps
+                }
+            },
+            {
+                name: "Cyber Sprint",
+                hue: 0, // Red
+                tempo: 128,
+                progression: [N.D2, N.F2, N.G2, N.Bb2], // Dm -> F -> G -> Bb
+                scale: [N.D4, N.F4, N.G4, N.A4, N.C5], // Dm Pentatonic
+                style: {
+                    bass: 'gallop', // Iron Maiden style
+                    drums: 'fast', // Fast hi-hats
+                    pad: 'chopped', // Rhythmic gating
+                    lead: 'fast' // 16th note runs
+                }
+            },
+            {
+                name: "Neon Funk",
+                hue: 60, // Yellow/Gold
+                tempo: 105,
+                progression: [N.E2, N.G2, N.A2, N.B2], // Em -> G -> A -> B
+                scale: [N.E4, N.G4, N.A4, N.B4, N.D5], // Em Pentatonic
+                style: {
+                    bass: 'funky', // Syncopated, octave jumps
+                    drums: 'breakbeat', // Syncopated kick/snare
+                    pad: 'stabs', // Short chord hits
+                    lead: 'bluesy' // Slide/bend feel
+                }
+            },
+            {
+                name: "Neon Drift",
+                hue: 300, // Magenta
+                tempo: 112, // Similar energy to Horizon
+                progression: [N.A2, N.F2, N.C2, N.G2], // Am -> F -> C -> G (Epic "Hero" progression)
+                scale: [N.A4, N.C5, N.D5, N.E5, N.G5], // Am Pentatonic
+                style: {
+                    bass: 'rolling',
+                    drums: 'driving',
+                    pad: 'sustained',
+                    lead: 'arpeggio'
+                }
+            },
+            {
+                name: "Star Gazing",
+                hue: 240, // Deep Blue
+                tempo: 80,
+                progression: [N.Bb2, N.G2, N.Eb2, N.F2], // Bb -> Gm -> Eb -> F
+                scale: [N.Bb4, N.D5, N.F5, N.G5, N.A5], // Bb Major Pentatonic
+                style: {
+                    bass: 'drone', // Very long root notes
+                    drums: 'sparse', // Minimal kick/rimshot
+                    pad: 'massive', // Huge reverb/delay
+                    lead: 'random' // Sparse random droplets
+                }
+            },
+            {
+                name: "Midnight Drive",
+                hue: 280, // Deep Purple
+                tempo: 95,
+                progression: [N.F2, N.Db2 || 69.30, N.Eb2, N.C2], // Fm -> Db -> Eb -> Cm
+                scale: [N.F4, N.Ab4, N.Bb4, N.C5, N.Eb5], // Fm Pentatonic
+                style: {
+                    bass: 'sustained', // Long, deep notes
+                    drums: 'heavy', // Slow, big reverb snare
+                    pad: 'swelling', // Slow attack pads
+                    lead: 'cinematic' // Slow, reverb-heavy melody
+                }
+            }
+        ];
+        this.currentTrackIndex = 0;
+    }
+
+    getCurrentTrack() {
+        if (!this.tracks) this.initTracks();
+        return this.tracks[this.currentTrackIndex];
+    }
+
     scheduleMusic() {
         if (!this.isPlayingMusic) return;
 
-        const secondsPerBeat = 60.0 / TEMPO_BPM;
+        const track = this.tracks[this.currentTrackIndex];
+        const secondsPerBeat = 60.0 / track.tempo;
         const lookahead = 0.1;
 
         while (this.nextNoteTime < this.ctx.currentTime + lookahead) {
-            this.playBeat(this.nextNoteTime, this.beatCount);
+            this.playBeat(this.nextNoteTime, this.beatCount, track);
             this.nextNoteTime += secondsPerBeat / 4; // 16th notes
             this.beatCount++;
         }
@@ -254,71 +363,125 @@ export class AudioController {
         this.timerID = setTimeout(() => this.scheduleMusic(), 25);
     }
 
-    playBeat(time, beat16) {
+    playBeat(time, beat16, track) {
         // 16th note counter (0-15 for a bar)
         const step = beat16 % 16;
         const bar = Math.floor(beat16 / 16);
 
         // Determine current chord based on bar index (loop of 4 bars)
         const chordIdx = bar % 4;
-        const rootFreq = this.progression[chordIdx];
+        const rootFreq = track.progression[chordIdx];
+        const style = track.style;
 
-        // --- 1. Rolling Bassline (16th notes) ---
-        // Octave bounce: Root -> Octave -> Root -> Octave
-        const bassFreq = (step % 2 === 0) ? rootFreq : rootFreq * 2;
-        this.playBass(time, bassFreq, step === 0); // Accent on 1
-
-        // --- 2. Drums ---
-        if (step === 0 || step === 8) this.playKick(time); // Kick on 1 and 3
-        if (step === 4 || step === 12) this.playSnare(time); // Snare on 2 and 4
-        if (step % 2 === 0) this.playHiHat(time, step % 4 === 2); // Hats on 8ths, open on off-beat
-
-        // --- 3. Pads (Sustained chords) ---
-        if (step === 0) {
-            // Play a chord every bar
-            this.playPad(time, rootFreq, 4 * (60 / TEMPO_BPM)); // Sustain for full bar
+        // --- BASS ---
+        if (style.bass === 'rolling') {
+            // Octave bounce: Root -> Octave -> Root -> Octave
+            const bassFreq = (step % 2 === 0) ? rootFreq : rootFreq * 2;
+            this.playBass(time, bassFreq, step === 0, 'sawtooth', 0.15); // Accent on 1
+        } else if (style.bass === 'sustained') {
+            if (step === 0) this.playBass(time, rootFreq, true, 'triangle', 2.0);
+        } else if (style.bass === 'gallop') {
+            // X . X X X . X X
+            const isNote = [0, 2, 3, 4, 6, 7, 8, 10, 11, 12, 14, 15].includes(step);
+            if (isNote) this.playBass(time, rootFreq, step % 4 === 0, 'square', 0.1);
+        } else if (style.bass === 'funky') {
+            // Syncopated: X . . X . X . .
+            if (step === 0) this.playBass(time, rootFreq, true, 'sawtooth', 0.2);
+            if (step === 3) this.playBass(time, rootFreq * 2, false, 'sawtooth', 0.1); // Octave pop
+            if (step === 5) this.playBass(time, rootFreq, false, 'sawtooth', 0.1);
+            if (step === 10) this.playBass(time, rootFreq * 2, false, 'sawtooth', 0.1);
+            if (step === 12) this.playBass(time, rootFreq, true, 'sawtooth', 0.2);
+        } else if (style.bass === 'drone') {
+            if (step === 0 && bar % 2 === 0) this.playBass(time, rootFreq, true, 'sine', 4.0); // 2 bars
         }
 
-        // --- 4. Procedural Melody ---
-        // Play sparse melody notes, mostly on 8th notes
-        if (step % 2 === 0 && Math.random() > 0.4) {
-            this.playMelodyNote(time, rootFreq);
+        // --- DRUMS ---
+        if (style.drums === 'driving') {
+            if (step === 0 || step === 8) this.playKick(time); // Kick on 1 and 3
+            if (step === 4 || step === 12) this.playSnare(time); // Snare on 2 and 4
+            if (step % 2 === 0) this.playHiHat(time, step % 4 === 2); // Hats on 8ths, open on off-beat
+        } else if (style.drums === 'heavy') {
+            if (step === 0) this.playKick(time);
+            if (step === 8) this.playSnare(time, true); // Big reverb
+            if (step === 14) this.playKick(time);
+            if (step % 4 === 0) this.playHiHat(time, false);
+        } else if (style.drums === 'fast') {
+            if (step === 0 || step === 8) this.playKick(time);
+            if (step === 4 || step === 12) this.playSnare(time);
+            this.playHiHat(time, step % 4 === 2); // Every 16th
+        } else if (style.drums === 'breakbeat') {
+            if (step === 0 || step === 10) this.playKick(time);
+            if (step === 4 || step === 12) this.playSnare(time);
+            if (step === 14) this.playSnare(time); // Ghost note
+            if (step % 2 === 0) this.playHiHat(time, step === 2 || step === 10);
+        } else if (style.drums === 'sparse') {
+            if (step === 0) this.playKick(time);
+            if (step === 8 && Math.random() > 0.5) this.playHiHat(time, true); // Occasional shimmer
+        }
+
+        // --- PADS ---
+        if (style.pad === 'sustained') {
+            if (step === 0) this.playPad(time, rootFreq, 4 * (60 / track.tempo), 'sawtooth'); // Sustain for full bar
+        } else if (style.pad === 'swelling') {
+            if (step === 0) this.playPad(time, rootFreq, 4 * (60 / track.tempo), 'triangle', true); // Slow attack
+        } else if (style.pad === 'chopped') {
+            if (step % 4 === 0) this.playPad(time, rootFreq, 0.2, 'square'); // Staccato
+        } else if (style.pad === 'stabs') {
+            if (step === 4 || step === 12) this.playPad(time, rootFreq * 2, 0.1, 'sawtooth'); // Off-beat hits
+        } else if (style.pad === 'massive') {
+            if (step === 0) this.playPad(time, rootFreq, 8 * (60 / track.tempo), 'sine', true); // Long drone
+        }
+
+        // --- MELODY ---
+        const melodyChance = style.lead === 'fast' ? 0.6 : (style.lead === 'random' ? 0.2 : 0.3);
+        if (step % 2 === 0 && Math.random() > (1 - melodyChance)) {
+            const note = track.scale[Math.floor(Math.random() * track.scale.length)];
+            const finalNote = Math.random() > 0.8 ? note * 2 : note;
+
+            let type = 'square';
+            let duration = 0.2;
+
+            if (style.lead === 'cinematic') { type = 'triangle'; duration = 0.6; }
+            if (style.lead === 'bluesy') { type = 'sawtooth'; duration = 0.3; }
+            if (style.lead === 'random') { type = 'sine'; duration = 1.0; }
+
+            this.playMelodyNote(time, finalNote, duration, type);
         }
     }
 
-    playBass(time, freq, accent) {
+    playBass(time, freq, accent, type = 'sawtooth', duration = 0.15) {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         const filter = this.ctx.createBiquadFilter();
 
-        osc.type = 'sawtooth';
+        osc.type = type;
         osc.frequency.setValueAtTime(freq, time);
 
         // Filter envelope for "pluck" sound
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(accent ? 800 : 400, time);
-        filter.frequency.exponentialRampToValueAtTime(100, time + 0.15);
+        filter.frequency.exponentialRampToValueAtTime(100, time + duration);
         filter.Q.value = 2;
 
         gain.gain.setValueAtTime(accent ? 0.25 : 0.15, time);
-        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
 
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(this.masterGain);
 
         osc.start(time);
-        osc.stop(time + 0.15);
+        osc.stop(time + duration);
     }
 
-    playPad(time, rootFreq, duration) {
+    playPad(time, rootFreq, duration, type = 'sawtooth', slowAttack = false) {
         // Create a rich pad using 2 detuned oscillators
         const osc1 = this.ctx.createOscillator();
         const osc2 = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        osc1.type = 'triangle';
-        osc2.type = 'sawtooth';
+        osc1.type = type;
+        osc2.type = type;
 
         // Chord voicing: Root + Minor 3rd + 5th (Basic Triad)
         // But for pad, let's just do Root + 5th for power chord feel + Octave
@@ -329,8 +492,13 @@ export class AudioController {
         osc2.detune.value = 10;
 
         gain.gain.setValueAtTime(0, time);
-        gain.gain.linearRampToValueAtTime(0.05, time + 0.5); // Slow attack
-        gain.gain.setValueAtTime(0.05, time + duration - 0.5);
+        if (slowAttack) {
+            gain.gain.linearRampToValueAtTime(0.05, time + 1.0); // Slower attack
+            gain.gain.setValueAtTime(0.05, time + duration - 1.0); // Hold
+        } else {
+            gain.gain.linearRampToValueAtTime(0.05, time + 0.1); // Faster attack
+            gain.gain.setValueAtTime(0.05, time + duration - 0.1); // Hold
+        }
         gain.gain.linearRampToValueAtTime(0, time + duration); // Slow release
 
         osc1.connect(gain);
@@ -345,17 +513,11 @@ export class AudioController {
         osc2.stop(time + duration);
     }
 
-    playMelodyNote(time, rootFreq) {
+    playMelodyNote(time, freq, duration = 0.2, type = 'square') {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
-        // Pick a random note from C Minor Pentatonic for safety
-        // C, Eb, F, G, Bb
-        const intervals = [1, 1.2, 1.33, 1.5, 1.78];
-        const interval = intervals[Math.floor(Math.random() * intervals.length)];
-        const freq = rootFreq * 2 * interval; // 2 octaves up
-
-        osc.type = 'square';
+        osc.type = type;
         osc.frequency.setValueAtTime(freq, time);
 
         // Vibrato
@@ -368,15 +530,15 @@ export class AudioController {
         lfo.start(time);
 
         gain.gain.setValueAtTime(0.08, time);
-        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
 
         osc.connect(gain);
         gain.connect(this.masterGain);
         gain.connect(this.delayNode); // Echo on melody
 
         osc.start(time);
-        osc.stop(time + 0.3);
-        lfo.stop(time + 0.3);
+        osc.stop(time + duration);
+        lfo.stop(time + duration);
     }
 
     playKick(time) {
@@ -396,7 +558,7 @@ export class AudioController {
         osc.stop(time + 0.5);
     }
 
-    playSnare(time) {
+    playSnare(time, bigReverb = false) {
         const bufferSize = this.ctx.sampleRate * 0.2;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -417,6 +579,14 @@ export class AudioController {
         filter.connect(gain);
         gain.connect(this.masterGain);
         gain.connect(this.delayNode); // Reverb-ish snare
+
+        if (bigReverb) {
+            // Send more to delay for "big" sound
+            const reverbSend = this.ctx.createGain();
+            reverbSend.gain.value = 0.5; // More wet signal
+            gain.connect(reverbSend);
+            reverbSend.connect(this.delayNode);
+        }
 
         noise.start(time);
     }
