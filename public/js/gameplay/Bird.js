@@ -13,7 +13,7 @@ export class Bird {
 
         this.y = canvas.height / 2;
         this.velocity = 0;
-        this.exhaust = []; // Particle based exhaust instead of line trail
+        this.exhaust = []; // Particle based exhaust
     }
 
     /**

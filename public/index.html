@@ -27,10 +27,12 @@
 
 <body>
     <div class="game-container">
+        <div class="background-grid"></div>
+        <div class="background-horizon"></div>
         <canvas id="gameCanvas"></canvas>
         <div id="ui-layer">
             <div id="start-screen" class="screen active">
-                <h1>NEON FLAP</h1>
+                <h1 class="glitch" data-text="NEON FLAP">NEON FLAP</h1>
                 <p>Press SPACE or TAP to Jump</p>
                 <div class="button-group">
                     <button id="start-btn" class="btn-neon btn-primary">START GAME</button>
@@ -43,12 +45,14 @@
                 <div id="version-info" class="version-info"></div>
             </div>
             <div id="game-over-screen" class="screen">
-                <h1>GAME OVER</h1>
+                <h1 class="glitch" data-text="GAME OVER">GAME OVER</h1>
                 <p>Score: <span id="final-score">0</span></p>
                 <p>Best: <span id="best-score">0</span></p>
                 <button id="restart-btn" class="btn-neon btn-primary">TRY AGAIN</button>
             </div>
-            <div id="score-hud">0</div>
+            <div class="score-container">
+                <div id="score-hud">0</div>
+            </div>
         </div>
     </div>
     <script type="module" src="js/main.js"></script>

@@ -39,14 +39,30 @@ export class Pipe {
         this.hueOffset = Math.random() * 360;
     }
 
-    draw(ctx, gameHue) {
+    draw(ctx, gameHue, bird) {
         ctx.save();
         // Make pipes complementary to the bird
         const pipeColor = `hsl(${gameHue + 180}, 100%, 50%)`;
 
-        ctx.shadowBlur = 15;
+        // Proximity Glow Logic
+        let shadowBlur = 15;
+        let brightness = 50; // default lightness
+
+        if (bird) {
+            // Calculate horizontal distance between pipe and bird centers
+            const dist = Math.abs((this.x + this.width / 2) - (bird.x + bird.width / 2));
+            if (dist < 200) { // Within 200px
+                const intensity = 1 - (dist / 200); // 0 to 1
+                shadowBlur = 15 + (intensity * 30); // Up to 45
+                brightness = 50 + (intensity * 30); // Up to 80% lightness (whiter)
+            }
+        }
+
+        const dynamicColor = `hsl(${gameHue + 180}, 100%, ${brightness}%)`;
+
+        ctx.shadowBlur = shadowBlur;
         ctx.shadowColor = pipeColor;
-        ctx.fillStyle = pipeColor;
+        ctx.fillStyle = dynamicColor;
 
         // Top Pipe
         ctx.fillRect(this.x, 0, this.width, this.topHeight);
