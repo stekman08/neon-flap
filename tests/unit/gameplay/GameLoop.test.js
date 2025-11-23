@@ -296,4 +296,138 @@ describe('GameLoop', () => {
       expect(stats.pooled).toBeGreaterThan(0); // Particle returned to pool
     });
   });
+
+  describe('frame rate independence', () => {
+    it('should maintain consistent pipe movement across different frame rates', () => {
+      // Simulate 60fps
+      const game60 = new GameLoop(canvas, ctx, uiElements);
+      game60.init();
+      game60.gameState = 'PLAYING';
+      game60.bird.y = 300;
+      game60.bird.velocity = 0;
+
+      // Add a pipe at known position
+      game60.pipes = [{
+        x: 400,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: function(speed, hue, deltaTime) {
+          this.x -= speed * deltaTime;
+        }
+      }];
+
+      // Run 60 frames at 60fps (deltaTime = 1)
+      for (let i = 0; i < 60; i++) {
+        game60.update(1);
+        game60.bird.y = 300;
+        game60.bird.velocity = 0;
+      }
+      const position60fps = game60.pipes[0].x;
+
+      // Simulate 120fps (twice as many frames, half the deltaTime)
+      const game120 = new GameLoop(canvas, ctx, uiElements);
+      game120.init();
+      game120.gameState = 'PLAYING';
+      game120.bird.y = 300;
+      game120.bird.velocity = 0;
+
+      // Add pipe at same initial position
+      game120.pipes = [{
+        x: 400,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: function(speed, hue, deltaTime) {
+          this.x -= speed * deltaTime;
+        }
+      }];
+
+      // Run 120 frames at 120fps (deltaTime = 0.5)
+      for (let i = 0; i < 120; i++) {
+        game120.update(0.5);
+        game120.bird.y = 300;
+        game120.bird.velocity = 0;
+      }
+      const position120fps = game120.pipes[0].x;
+
+      // Pipes should be at approximately the same position
+      // (within 1 pixel tolerance for floating point precision)
+      expect(Math.abs(position60fps - position120fps)).toBeLessThan(1);
+    });
+
+    it('should spawn pipes at consistent time intervals regardless of frame rate', () => {
+      // At 60fps
+      const game60 = new GameLoop(canvas, ctx, uiElements);
+      game60.init();
+      game60.gameState = 'PLAYING';
+      game60.bird.y = 300;
+      game60.bird.velocity = 0;
+
+      // Run enough frames to spawn at least one pipe
+      // PIPE_SPAWN_RATE = 120 frames at 60fps = 2000ms
+      for (let i = 0; i < 130; i++) {
+        game60.update(1);
+        game60.bird.y = 300;
+        game60.bird.velocity = 0;
+      }
+      const pipesAt60fps = game60.pipes.length;
+
+      // At 120fps (same real time, but twice as many frames)
+      const game120 = new GameLoop(canvas, ctx, uiElements);
+      game120.init();
+      game120.gameState = 'PLAYING';
+      game120.bird.y = 300;
+      game120.bird.velocity = 0;
+
+      // Run twice as many frames at half deltaTime (same real time)
+      for (let i = 0; i < 260; i++) {
+        game120.update(0.5);
+        game120.bird.y = 300;
+        game120.bird.velocity = 0;
+      }
+      const pipesAt120fps = game120.pipes.length;
+
+      // Should spawn same number of pipes in same real time
+      expect(pipesAt60fps).toBe(pipesAt120fps);
+      expect(pipesAt60fps).toBeGreaterThan(0);
+    });
+
+    it('should maintain consistent bird physics across different frame rates', () => {
+      // At 60fps
+      const game60 = new GameLoop(canvas, ctx, uiElements);
+      game60.init();
+      game60.gameState = 'PLAYING';
+
+      const initialY = 300;
+      game60.bird.y = initialY;
+      game60.bird.velocity = 0;
+
+      // Let bird fall for 30 frames at 60fps
+      for (let i = 0; i < 30; i++) {
+        game60.update(1);
+      }
+      const fallDistance60fps = initialY - game60.bird.y;
+
+      // At 120fps
+      const game120 = new GameLoop(canvas, ctx, uiElements);
+      game120.init();
+      game120.gameState = 'PLAYING';
+
+      game120.bird.y = initialY;
+      game120.bird.velocity = 0;
+
+      // Let bird fall for 60 frames at 120fps (same real time)
+      for (let i = 0; i < 60; i++) {
+        game120.update(0.5);
+      }
+      const fallDistance120fps = initialY - game120.bird.y;
+
+      // Bird should fall approximately the same distance
+      // (within 2 pixels for floating point precision)
+      expect(Math.abs(fallDistance60fps - fallDistance120fps)).toBeLessThan(2);
+    });
+  });
 });
