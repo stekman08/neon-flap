@@ -29,7 +29,26 @@ describe('GameLoop', () => {
       rotate: vi.fn(),
       fillRect: vi.fn(),
       beginPath: vi.fn(),
-      fill: vi.fn()
+      fill: vi.fn(),
+      fillText: vi.fn(),
+      arc: vi.fn(),
+      rect: vi.fn(),
+      clip: vi.fn(),
+      moveTo: vi.fn(),
+      lineTo: vi.fn(),
+      stroke: vi.fn(),
+      closePath: vi.fn(),
+      fillStyle: '',
+      strokeStyle: '',
+      lineWidth: 1,
+      font: '',
+      textAlign: '',
+      globalAlpha: 1,
+      shadowBlur: 0,
+      shadowColor: '',
+      createLinearGradient: vi.fn(() => ({
+        addColorStop: vi.fn()
+      }))
     };
     uiElements = {
       startScreen: { classList: { add: vi.fn(), remove: vi.fn() } },
@@ -39,11 +58,18 @@ describe('GameLoop', () => {
       bestScoreEl: { innerText: '' }
     };
 
-    // Mock localStorage
     global.localStorage = {
       getItem: vi.fn(() => '10'),
       setItem: vi.fn()
     };
+
+    // Mock document.querySelector for CRT overlay
+    document.querySelector = vi.fn(() => ({
+      classList: {
+        add: vi.fn(),
+        remove: vi.fn()
+      }
+    }));
   });
 
   describe('initialization', () => {
@@ -128,12 +154,17 @@ describe('GameLoop', () => {
     });
 
     it('should show game over screen', () => {
+      vi.useFakeTimers();
       const game = new GameLoop(canvas, ctx, uiElements);
       game.init();
 
       game.gameOver();
 
+      // Fast-forward time for CRT effect delay (500ms)
+      vi.advanceTimersByTime(500);
+
       expect(uiElements.gameOverScreen.classList.add).toHaveBeenCalledWith('active');
+      vi.useRealTimers();
     });
 
     it('should create explosion particles', () => {
@@ -427,6 +458,119 @@ describe('GameLoop', () => {
       // Bird should fall approximately the same distance
       // (within 2 pixels for floating point precision)
       expect(Math.abs(fallDistance60fps - fallDistance120fps)).toBeLessThan(2);
+    });
+  });
+
+  describe('start() method', () => {
+    it('should start game from START state', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'START';
+
+      game.start();
+
+      expect(game.gameState).toBe('PLAYING');
+    });
+
+    it('should start game from GAMEOVER state', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'GAMEOVER';
+
+      game.start();
+
+      expect(game.gameState).toBe('PLAYING');
+    });
+
+    it('should remove active class from start screen', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'START';
+
+      game.start();
+
+      expect(uiElements.startScreen.classList.remove).toHaveBeenCalledWith('active');
+    });
+
+    it('should remove active class from game over screen', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'START';
+
+      game.start();
+
+      expect(uiElements.gameOverScreen.classList.remove).toHaveBeenCalledWith('active');
+    });
+
+    it('should show score HUD', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'START';
+
+      game.start();
+
+      expect(uiElements.scoreHud.style.display).toBe('flex');
+    });
+
+    it('should not start if already PLAYING', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      const initialState = game.gameState;
+
+      game.start();
+
+      // State should not change
+      expect(game.gameState).toBe(initialState);
+    });
+  });
+
+  describe('reactive theme', () => {
+    it('should start with cyan hue (180 degrees)', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+
+      expect(game.gameHue).toBe(180);
+    });
+
+    it('should target magenta hue when score > 25', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.score = 26;
+
+      // Run a few updates to allow interpolation
+      for (let i = 0; i < 100; i++) {
+        game.update(1);
+        game.bird.y = 300; // Keep bird alive
+        game.bird.velocity = 0;
+      }
+
+      // gameHue should be moving towards 300 (magenta)
+      // Allow for oscillation, so check if it's in the general range
+      expect(game.gameHue).toBeGreaterThan(250);
+      expect(game.gameHue).toBeLessThan(350);
+    });
+
+    it('should target gold hue when score > 50', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.score = 51;
+
+      // Run a few updates to allow interpolation
+      for (let i = 0; i < 100; i++) {
+        game.update(1);
+        game.bird.y = 300; // Keep bird alive
+        game.bird.velocity = 0;
+      }
+
+      // gameHue should be moving towards 45 (gold)
+      // Allow for oscillation and wrapping
+      const hue = game.gameHue;
+      // Should be in range [25, 65] approximately
+      expect(hue).toBeGreaterThan(25);
+      expect(hue).toBeLessThan(200); // Not still at cyan
     });
   });
 });

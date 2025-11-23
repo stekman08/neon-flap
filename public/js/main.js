@@ -1,11 +1,13 @@
 import { GameLoop } from './gameplay/GameLoop.js';
+import { InputHandler } from './input/InputHandler.js';
 import { ViewportManager } from './config/ViewportManager.js';
+import { AudioController } from './audio/AudioController.js';
 
-// Get canvas
+// Initialize Core Systems
 const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { alpha: false }); // Optimize for no transparency in background
 
-// Get UI elements
+// UI Elements
 const uiElements = {
     startScreen: document.getElementById('start-screen'),
     gameOverScreen: document.getElementById('game-over-screen'),
@@ -14,18 +16,18 @@ const uiElements = {
     bestScoreEl: document.getElementById('best-score')
 };
 
-// Get buttons
-const startBtn = document.getElementById('start-btn');
-const aiBtn = document.getElementById('ai-btn');
-const restartBtn = document.getElementById('restart-btn');
-const installBtn = document.getElementById('install-btn');
-const versionInfo = document.getElementById('version-info');
+// Audio System
+const audioController = new AudioController();
 
-// Create game instance
-const game = new GameLoop(canvas, ctx, uiElements);
+// Game Loop
+const game = new GameLoop(canvas, ctx, uiElements, audioController);
+game.init();
 
-// Initialize ViewportManager for responsive canvas sizing
-const viewportManager = new ViewportManager(canvas);
+// Input Handling
+const inputHandler = new InputHandler(game);
+
+// Viewport Management
+const viewportManager = new ViewportManager(canvas, game);
 viewportManager.onResize = () => {
     // Update all game entities when viewport changes
     if (game.handleResize) {
@@ -33,42 +35,73 @@ viewportManager.onResize = () => {
     }
 };
 
-// Jump action
+// Get buttons
+const startBtn = document.getElementById('start-btn');
+const muteBtn = document.getElementById('mute-btn');
+const muteIcon = muteBtn.querySelector('.icon');
+const aiBtn = document.getElementById('ai-btn');
+const restartBtn = document.getElementById('restart-btn');
+const installBtn = document.getElementById('install-btn');
+const versionInfo = document.getElementById('version-info');
+
+// Helper function to ensure audio context is ready
+function ensureAudioReady() {
+    audioController.init();
+    if (!audioController.isMuted && audioController.ctx && audioController.ctx.state === 'suspended') {
+        audioController.ctx.resume();
+    }
+}
+
+// Start Game Button
+startBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    ensureAudioReady();
+    game.isAutoPlay = false;
+    game.start();
+});
+
+// Mute Button
+muteBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Prevent game start if clicking mute
+    const isMuted = audioController.toggleMute();
+    muteIcon.textContent = isMuted ? '🔇' : '🔊';
+
+    if (isMuted) {
+        muteBtn.classList.remove('unmuted');
+    } else {
+        muteBtn.classList.add('unmuted');
+    }
+});
+
+// Music Button
+const musicBtn = document.getElementById('music-btn');
+musicBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isPlaying = audioController.toggleMusic();
+
+    if (isPlaying) {
+        musicBtn.classList.add('playing');
+    } else {
+        musicBtn.classList.remove('playing');
+    }
+});
+
+// Jump action (for input handlers)
 function jumpAction() {
     if (game.gameState === 'START') {
-        game.gameState = 'PLAYING';
-        uiElements.startScreen.classList.remove('active');
-        uiElements.scoreHud.style.display = 'block';
-        game.bird.jump();
+        ensureAudioReady();
+        game.start();
     } else if (game.gameState === 'PLAYING') {
         game.bird.jump();
     }
 }
 
-// Event listeners
-window.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        jumpAction();
-    }
-});
 
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault(); // Prevent scrolling
-    jumpAction();
-});
-
-canvas.addEventListener('mousedown', () => {
-    jumpAction();
-});
-
-startBtn.addEventListener('click', () => {
-    game.isAutoPlay = false;
-    jumpAction();
-});
-
-aiBtn.addEventListener('click', () => {
+aiBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    ensureAudioReady();
     game.isAutoPlay = true;
-    jumpAction();
+    game.start();
 });
 
 restartBtn.addEventListener('click', () => {
@@ -80,7 +113,10 @@ restartBtn.addEventListener('click', () => {
 
 // Initialize and start
 game.init();
-game.loop();
+// game.loop() is called when game starts or if we want an attract mode later
+// For now, let's start the loop immediately for background animations (attract mode)
+game.lastTimestamp = performance.now();
+game.loop(game.lastTimestamp);
 
 // Expose game instance for E2E testing (only in localhost)
 if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
@@ -99,6 +135,16 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
+// Display version info
+fetch('/version.json')
+    .then(response => response.json())
+    .then(data => {
+        if (versionInfo) {
+            versionInfo.innerText = `v${data.version}`;
+        }
+    })
+    .catch(err => console.log('Version info not found'));
 
 // PWA Install Prompt Handling
 let deferredPrompt;

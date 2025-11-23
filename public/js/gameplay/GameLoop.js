@@ -17,10 +17,11 @@ import {
 } from '../config/constants.js';
 
 export class GameLoop {
-    constructor(canvas, ctx, uiElements) {
+    constructor(canvas, ctx, uiElements, audioController) {
         this.canvas = canvas;
         this.ctx = ctx;
         this.uiElements = uiElements;
+        this.audioController = audioController;
 
         // Game state
         this.currentPipeSpeed = INITIAL_PIPE_SPEED;
@@ -30,7 +31,7 @@ export class GameLoop {
         this.score = 0;
         this.pipesPassed = 0;
         this.highScore = localStorage.getItem('neonFlapHighScore') || 0;
-        this.gameHue = 0; // For rainbow effect
+        this.gameHue = 180; // Start at Cyan
         this.isAutoPlay = false;
         this.lastPipeGapCenter = 0;
 
@@ -59,7 +60,11 @@ export class GameLoop {
     }
 
     init() {
-        this.bird = new Bird(this.canvas, this.ctx, this.gameHue, (x, y) => this.particleSystem.createJumpParticles(x, y), () => this.gameOver());
+        this.bird = new Bird(this.canvas, this.ctx, this.gameHue,
+            (x, y) => this.particleSystem.createJumpParticles(x, y),
+            () => this.gameOver(),
+            () => { if (this.audioController) this.audioController.playJump(); } // Jump sound callback
+        );
         this.pipes = [];
         this.particleSystem.reset();
         this.city = new CitySkyline(this.canvas, this.ctx);
@@ -68,13 +73,14 @@ export class GameLoop {
         this.score = 0;
         this.pipesPassed = 0;
         this.frames = 0;
-        this.gameHue = 0;
+        this.gameHue = 180; // Start at Cyan
         this.isAutoPlay = false;
         this.lastPipeGapCenter = this.canvas.height / 2; // Init center
         this.lastTimestamp = 0;
         this.timeSinceLastPipe = 0;
         this.shake = 0;
         this.uiElements.scoreHud.innerText = this.score;
+        this.uiElements.scoreHud.style.display = 'none'; // Ensure hidden on init
 
         // Reset difficulty
         this.currentPipeSpeed = INITIAL_PIPE_SPEED;
@@ -95,6 +101,22 @@ export class GameLoop {
         }
     }
 
+    start() {
+        if (this.gameState === 'START' || this.gameState === 'GAMEOVER') {
+            this.gameState = 'PLAYING';
+            this.uiElements.startScreen.classList.remove('active');
+            this.uiElements.gameOverScreen.classList.remove('active');
+            this.uiElements.scoreHud.style.display = 'flex'; // Show score
+            this.bird.jump();
+
+            // Ensure loop is running
+            if (!this.lastTimestamp) {
+                this.lastTimestamp = performance.now();
+                this.loop(this.lastTimestamp);
+            }
+        }
+    }
+
     createParticles(x, y, count, color) {
         // Legacy method kept for compatibility if needed, but using ParticleSystem now
         this.particleSystem.createExplosion(x, y);
@@ -103,7 +125,10 @@ export class GameLoop {
     gameOver() {
         this.gameState = 'GAMEOVER';
         this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2); // Explosion
+        if (this.audioController) this.audioController.playCrash();
         this.shake = 20; // Trigger screen shake
+
+        this.uiElements.gameOverScreen.classList.add('active');
 
         if (!this.isAutoPlay && this.score > this.highScore) {
             this.highScore = this.score;
@@ -114,14 +139,26 @@ export class GameLoop {
         this.uiElements.bestScoreEl.innerText = this.highScore;
 
         this.uiElements.scoreHud.style.display = 'none';
-        this.uiElements.gameOverScreen.classList.add('active');
     }
 
     update(deltaTime) {
         this.performanceMonitor.markUpdateStart();
 
         // Background
-        this.gameHue += 0.5 * deltaTime; // Cycle colors
+        // Reactive Themes: Hue shifts based on score
+        let targetHue = 180; // Default Cyan/Blue
+        if (this.score > 50) {
+            targetHue = 45; // Gold/Fire
+        } else if (this.score > 25) {
+            targetHue = 300; // Magenta/Purple
+        }
+
+        // Smooth interpolation towards target hue with breathing oscillation
+        const time = Date.now() * 0.001;
+        const oscillation = Math.sin(time) * 20; // +/- 20 degrees breathing
+        const currentBaseHue = targetHue + oscillation;
+        this.gameHue = this.gameHue + (currentBaseHue - this.gameHue) * 0.05;
+
         this.stars.forEach(star => star.update(deltaTime));
         this.city.update(this.currentPipeSpeed, this.gameHue, deltaTime);
         this.synthGrid.update(this.currentPipeSpeed, this.gameHue, deltaTime);
@@ -176,9 +213,11 @@ export class GameLoop {
                         this.score += 2;
                         this.scorePopups.push(new ScorePopup(this.bird.x, this.bird.y - 20, "+2", this.ctx, "#ffd700"));
                         this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2); // Gold explosion
+                        if (this.audioController) this.audioController.playScore(); // Play sound
                     } else {
                         this.score++;
                         this.scorePopups.push(new ScorePopup(this.bird.x, this.bird.y - 20, "+1", this.ctx));
+                        if (this.audioController) this.audioController.playScore(); // Play sound
                     }
 
                     this.uiElements.scoreHud.innerText = this.score;
