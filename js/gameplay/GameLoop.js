@@ -124,9 +124,14 @@ export class GameLoop {
 
     gameOver() {
         this.gameState = 'GAMEOVER';
-        this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2); // Explosion
+        this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2);
         if (this.audioController) this.audioController.playCrash();
-        this.shake = 20; // Trigger screen shake
+        this.shake = 20;
+
+        // Haptic feedback (heavy)
+        if (navigator.vibrate) {
+            navigator.vibrate(200);
+        }
 
         this.uiElements.gameOverScreen.classList.add('active');
 
@@ -219,15 +224,17 @@ export class GameLoop {
                     const diff = Math.abs(gapCenter - birdCenter);
                     const perfectThreshold = GameConfig.scaleHeight(25); // ~4.2% of height
 
-                    if (diff < perfectThreshold) { // Threshold for perfect
+                    const isPerfect = diff < perfectThreshold;
+
+                    if (isPerfect) {
                         this.score += 2;
                         this.scorePopups.push(new ScorePopup(this.bird.x, this.bird.y - 20, "+2", this.ctx, "#ffd700"));
-                        this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2); // Gold explosion
-                        if (this.audioController) this.audioController.playPerfectScore(); // Play perfect sound
+                        this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2);
+                        if (this.audioController) this.audioController.playPerfectScore();
                     } else {
                         this.score++;
                         this.scorePopups.push(new ScorePopup(this.bird.x, this.bird.y - 20, "+1", this.ctx));
-                        if (this.audioController) this.audioController.playScore(); // Play sound
+                        if (this.audioController) this.audioController.playScore();
                     }
 
                     this.uiElements.scoreHud.innerText = this.score;

@@ -47,7 +47,7 @@ const versionInfo = document.getElementById('version-info');
 // Helper function to ensure audio context is ready
 function ensureAudioReady() {
     audioController.init();
-    if (!audioController.isMuted && audioController.ctx && audioController.ctx.state === 'suspended') {
+    if (audioController.ctx && audioController.ctx.state === 'suspended') {
         audioController.ctx.resume();
     }
 }
@@ -56,17 +56,41 @@ function ensureAudioReady() {
 startBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     ensureAudioReady();
+
+    // Auto-start music when game starts (only if user hasn't made a choice and SFX not muted)
+    if (!audioController.isPlayingMusic && !audioController.userHasInteractedWithMusic && !audioController.isSfxMuted) {
+        const isPlaying = audioController.toggleMusic(true); // Enable fade-in
+        if (isPlaying) {
+            musicToggleBtn.classList.add('playing');
+
+            // Show VCR OSD
+            const track = audioController.getCurrentTrack();
+            const index = audioController.currentTrackIndex + 1;
+            const total = audioController.tracks.length;
+            musicOsd.innerText = `▶ PLAY ${index}/${total}: ${track.name.toUpperCase()}`;
+            musicOsd.classList.add('active');
+
+            setTimeout(() => {
+                musicOsd.classList.remove('active');
+            }, 3000);
+        }
+    }
+
     game.isAutoPlay = false;
     game.start();
 });
 
-// Mute Button
+// Mute Button (Controls SFX only now)
+// Initialize button state based on default (Unmuted)
+muteBtn.classList.add('unmuted');
+muteIcon.textContent = '🔊';
+
 muteBtn.addEventListener('click', (e) => {
     e.stopPropagation(); // Prevent game start if clicking mute
-    const isMuted = audioController.toggleMute();
-    muteIcon.textContent = isMuted ? '🔇' : '🔊';
+    const isSfxMuted = audioController.toggleMute();
+    muteIcon.textContent = isSfxMuted ? '🔇' : '🔊';
 
-    if (isMuted) {
+    if (isSfxMuted) {
         muteBtn.classList.remove('unmuted');
     } else {
         muteBtn.classList.add('unmuted');
@@ -143,6 +167,7 @@ game.loop(game.lastTimestamp);
 // Expose game instance for E2E testing (only in localhost)
 if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     window.__GAME__ = game;
+    window.__GAME__.audioController = audioController;
 }
 
 // Register Service Worker for PWA support
@@ -237,3 +262,4 @@ if (versionInfo) {
             versionInfo.textContent = '';
         });
 }
+
