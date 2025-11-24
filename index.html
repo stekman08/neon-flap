@@ -52,16 +52,20 @@
                     </button>
                 </div>
                 <div class="controls-row">
-                    <button id="mute-btn" class="btn-icon" aria-label="Toggle Sound Effects">
-                        <span class="icon">🔇</span>
+                    <button id="mute-btn" class="icon-btn" aria-label="Toggle Sound">
+                        <span class="icon">🔊</span>
                     </button>
-                    <button id="music-btn" class="btn-icon" aria-label="Toggle Music">
+                    <button id="music-btn" class="icon-btn" aria-label="Toggle Music">
                         <span class="icon">🎵</span>
+                    </button>
+                    <button id="baby-mode-btn" class="icon-btn" aria-label="Toggle Baby Mode" title="Baby Mode">
+                        <span class="icon">👶</span>
                     </button>
                 </div>
                 <div id="version-info" class="version-info"></div>
             </div>
             <div id="game-over-screen" class="screen">
+                <h2 id="baby-mode-indicator">BABY MODE</h2>
                 <h1 class="glitch" data-text="GAME OVER">GAME OVER</h1>
                 <p>Score: <span id="final-score">0</span></p>
                 <p>Best: <span id="best-score">0</span></p>

@@ -2,6 +2,7 @@ import { GameLoop } from './gameplay/GameLoop.js';
 import { InputHandler } from './input/InputHandler.js';
 import { ViewportManager } from './config/ViewportManager.js';
 import { AudioController } from './audio/AudioController.js';
+import { GameConfig } from './config/GameConfig.js';
 
 // Initialize Core Systems
 const canvas = document.getElementById('gameCanvas');
@@ -39,23 +40,34 @@ viewportManager.onResize = () => {
 const startBtn = document.getElementById('start-btn');
 const muteBtn = document.getElementById('mute-btn');
 const muteIcon = muteBtn.querySelector('.icon');
+const babyModeBtn = document.getElementById('baby-mode-btn');
+const babyModeIndicator = document.getElementById('baby-mode-indicator');
 const aiBtn = document.getElementById('ai-btn');
 const restartBtn = document.getElementById('restart-btn');
 const installBtn = document.getElementById('install-btn');
 const versionInfo = document.getElementById('version-info');
 
 // Helper function to ensure audio context is ready
-function ensureAudioReady() {
+async function ensureAudioReady() {
     audioController.init();
     if (audioController.ctx && audioController.ctx.state === 'suspended') {
-        audioController.ctx.resume();
+        try {
+            await audioController.ctx.resume();
+            console.log('[Audio] Context resumed, state:', audioController.ctx.state);
+        } catch (e) {
+            console.error('[Audio] Failed to resume context:', e);
+        }
     }
 }
 
+// iOS PWA Fix: Resume audio on ANY user interaction (especially important in standalone mode)
+document.addEventListener('touchstart', ensureAudioReady, { once: true, passive: true });
+document.addEventListener('click', ensureAudioReady, { once: true, passive: true });
+
 // Start Game Button
-startBtn.addEventListener('click', (e) => {
+startBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    ensureAudioReady();
+    await ensureAudioReady();
 
     // Auto-start music when game starts (only if user hasn't made a choice and SFX not muted)
     if (!audioController.isPlayingMusic && !audioController.userHasInteractedWithMusic && !audioController.isSfxMuted) {
@@ -97,6 +109,33 @@ muteBtn.addEventListener('click', (e) => {
     }
 });
 
+// Baby Mode Button - Load from localStorage
+const savedBabyMode = localStorage.getItem('neonFlapBabyMode') === 'true';
+GameConfig.toggleBabyMode(savedBabyMode);
+if (savedBabyMode) {
+    babyModeBtn.classList.add('active');
+    babyModeIndicator.style.display = 'block';
+}
+
+babyModeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isBabyMode = !GameConfig.isBabyMode;
+    GameConfig.toggleBabyMode(isBabyMode);
+    localStorage.setItem('neonFlapBabyMode', isBabyMode);
+
+    if (isBabyMode) {
+        babyModeBtn.classList.add('active');
+        babyModeIndicator.style.display = 'block';
+    } else {
+        babyModeBtn.classList.remove('active');
+        babyModeIndicator.style.display = 'none';
+    }
+
+    if (game.gameState === 'START') {
+        game.init();
+    }
+});
+
 // Music Button
 const musicOsd = document.getElementById('music-osd');
 const musicToggleBtn = document.getElementById('music-btn');
@@ -133,9 +172,9 @@ musicToggleBtn.addEventListener('click', (e) => {
 });
 
 // Jump action (for input handlers)
-function jumpAction() {
+async function jumpAction() {
     if (game.gameState === 'START') {
-        ensureAudioReady();
+        await ensureAudioReady();
         game.start();
     } else if (game.gameState === 'PLAYING') {
         game.bird.jump();
@@ -143,9 +182,9 @@ function jumpAction() {
 }
 
 
-aiBtn.addEventListener('click', (e) => {
+aiBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    ensureAudioReady();
+    await ensureAudioReady();
     game.isAutoPlay = true;
     game.start();
 });
@@ -183,15 +222,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Display version info
-fetch('./version.json')
-    .then(response => response.json())
-    .then(data => {
-        if (versionInfo) {
-            versionInfo.innerText = `v${data.version}`;
-        }
-    })
-    .catch(err => console.log('Version info not found'));
+// Display version info (removed duplicate, see bottom of file)
 
 // PWA Install Prompt Handling
 let deferredPrompt;
@@ -255,11 +286,13 @@ if (versionInfo) {
     fetch('./version.json')
         .then(response => response.json())
         .then(data => {
-            versionInfo.textContent = data.displayFull;
+            // Try displayFull first, fallback to version, then empty
+            versionInfo.textContent = data.displayFull || (data.version ? `v${data.version}` : '');
         })
         .catch(() => {
             // Silently fail if version.json doesn't exist
             versionInfo.textContent = '';
+            console.log('[Version] version.json not found or failed to load');
         });
 }
 

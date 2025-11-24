@@ -10,6 +10,9 @@ export class GameConfig {
   static canvasWidth = 400;
   static canvasHeight = 600;
 
+  // Game Mode
+  static isBabyMode = false;
+
   /**
    * Update canvas dimensions and trigger recalculation of all proportional values
    * @param {number} width - New canvas width
@@ -53,6 +56,9 @@ export class GameConfig {
    * Reference: 170px at 400×600
    */
   static get initialPipeGap() {
+    if (this.isBabyMode) {
+      return this.scaleHeight(300); // 300px unscaled (BABY_PIPE_GAP)
+    }
     return this.canvasHeight * 0.283; // 170/600 ≈ 28.3%
   }
 
@@ -117,5 +123,9 @@ export class GameConfig {
    */
   static scaleHeight(referenceValue) {
     return referenceValue * (this.canvasHeight / this.REFERENCE_HEIGHT);
+  }
+
+  static toggleBabyMode(enabled) {
+    this.isBabyMode = enabled;
   }
 }

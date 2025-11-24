@@ -117,6 +117,14 @@ canvas {
     pointer-events: all;
 }
 
+#baby-mode-indicator {
+    display: none;
+    color: #ff71ce;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px #ff71ce;
+}
+
 h1 {
     font-size: 48px;
     margin-bottom: 10px;
@@ -271,7 +279,7 @@ p {
     border-radius: 12px;
     cursor: pointer;
     overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
@@ -288,7 +296,7 @@ p {
 }
 
 /* Override margin for buttons inside row */
-.controls-row .btn-icon {
+.controls-row .icon-btn {
     margin-top: 0;
     margin-left: 0;
 }
@@ -305,7 +313,7 @@ p {
             transparent,
             rgba(255, 255, 255, 0.1),
             transparent);
-    transition: left 0.5s;
+    transition: left 0.2s;
     z-index: -1;
 }
 
@@ -365,7 +373,7 @@ button:not(.btn-neon) {
     border-radius: 5px;
     cursor: pointer;
     box-shadow: 0 0 10px #0ff;
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
     text-transform: uppercase;
 }
 
@@ -375,34 +383,36 @@ button:not(.btn-neon):hover {
     transform: scale(1.05);
 }
 
-.btn-icon {
-    background: rgba(255, 255, 255, 0.05);
+button.icon-btn {
+    background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: #fff;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    color: rgba(255, 255, 255, 0.3);
     font-size: 24px;
     width: 50px;
     height: 50px;
     border-radius: 50%;
     cursor: pointer;
     margin-top: 20px;
-    transition: all 0.3s ease;
+    transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: none;
+    padding: 0;
 }
 
-.btn-icon:hover {
-    background: rgba(0, 255, 255, 0.2);
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-    transform: scale(1.1);
+button.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
-/* Pulse animation for mute button to show it's there */
 @keyframes pulse-soft {
     0% {
         box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.4);
@@ -417,37 +427,36 @@ button:not(.btn-neon):hover {
     }
 }
 
-#mute-btn {
-    /* Default state (Muted) */
-    border-color: rgba(255, 0, 0, 0.5);
-    color: rgba(255, 255, 255, 0.7);
-    animation: pulse-soft 2s infinite;
-}
-
 #mute-btn.unmuted {
-    /* Unmuted state */
     border-color: #0ff;
     color: #fff;
-    box-shadow: 0 0 15px #0ff;
-    animation: none;
-    background: rgba(0, 255, 255, 0.1);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.6), inset 0 0 10px rgba(0, 255, 255, 0.2);
+    background: rgba(0, 255, 255, 0.15);
+    text-shadow: 0 0 10px #0ff;
 }
 
 #music-btn {
-    /* Default state (Music Off) */
-    border-color: rgba(255, 0, 0, 0.5);
-    color: rgba(255, 255, 255, 0.7);
     margin-left: 10px;
-    /* Spacing between buttons */
 }
 
 #music-btn.playing {
-    /* Playing state */
     border-color: #f0f;
-    /* Magenta for music */
     color: #fff;
-    box-shadow: 0 0 15px #f0f;
-    background: rgba(255, 0, 255, 0.1);
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.6), inset 0 0 10px rgba(255, 0, 255, 0.2);
+    background: rgba(255, 0, 255, 0.15);
+    text-shadow: 0 0 10px #f0f;
+}
+
+#baby-mode-btn {
+    margin-left: 10px;
+}
+
+#baby-mode-btn.active {
+    border-color: #ff71ce;
+    color: #fff;
+    box-shadow: 0 0 20px rgba(255, 113, 206, 0.6), inset 0 0 10px rgba(255, 113, 206, 0.2);
+    background: rgba(255, 113, 206, 0.15);
+    text-shadow: 0 0 10px #ff71ce;
 }
 
 .score-container {
@@ -630,7 +639,7 @@ button:not(.btn-neon):hover {
         margin-bottom: var(--sab);
     }
 
-    .btn-icon {
+    .icon-btn {
         width: 60px;
         height: 60px;
     }
