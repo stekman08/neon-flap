@@ -56,6 +56,26 @@ function ensureAudioReady() {
 startBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     ensureAudioReady();
+
+    // Auto-start music when game starts (only if user hasn't made a choice)
+    if (!audioController.isPlayingMusic && !audioController.userHasInteractedWithMusic) {
+        const isPlaying = audioController.toggleMusic(true); // Enable fade-in
+        if (isPlaying) {
+            musicToggleBtn.classList.add('playing');
+
+            // Show VCR OSD
+            const track = audioController.getCurrentTrack();
+            const index = audioController.currentTrackIndex + 1;
+            const total = audioController.tracks.length;
+            musicOsd.innerText = `▶ PLAY ${index}/${total}: ${track.name.toUpperCase()}`;
+            musicOsd.classList.add('active');
+
+            setTimeout(() => {
+                musicOsd.classList.remove('active');
+            }, 3000);
+        }
+    }
+
     game.isAutoPlay = false;
     game.start();
 });
@@ -241,3 +261,4 @@ if (versionInfo) {
             versionInfo.textContent = '';
         });
 }
+
