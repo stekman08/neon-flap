@@ -345,19 +345,6 @@ export class AudioController {
                 }
             },
             {
-                name: "Star Gazing",
-                hue: 240, // Deep Blue
-                tempo: 80,
-                progression: [N.Bb2, N.G2, N.Eb2, N.F2], // Bb -> Gm -> Eb -> F
-                scale: [N.Bb4, N.D5, N.F5, N.G5, N.A5], // Bb Major Pentatonic
-                style: {
-                    bass: 'drone', // Very long root notes
-                    drums: 'sparse', // Minimal kick/rimshot
-                    pad: 'massive', // Huge reverb/delay
-                    lead: 'random' // Sparse random droplets
-                }
-            },
-            {
                 name: "Midnight Drive",
                 hue: 280, // Deep Purple
                 tempo: 95,
