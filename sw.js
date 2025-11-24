@@ -1,42 +1,45 @@
-// Version: 1654a0d • 2025-11-24 11:14
+// Version: bf8ec36 • 2025-11-24 20:36
 // Cache name will be set dynamically based on version
 let CACHE_NAME = 'neon-flap-v1'; // fallback
 
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/js/main.js',
-  '/js/gameplay/GameLoop.js',
-  '/js/gameplay/Bird.js',
-  '/js/gameplay/Pipe.js',
-  '/js/gameplay/ParticleSystem.js',
-  '/js/effects/Particle.js',
-  '/js/effects/ParticlePool.js',
-  '/js/background/Star.js',
-  '/js/background/CitySkyline.js',
-  '/js/background/SynthGrid.js',
-  '/js/background/MatrixColumn.js',
-  '/js/scoring/ScorePopup.js',
-  '/js/ai/AIController.js',
-  '/js/audio/AudioController.js',
-  '/js/input/InputHandler.js',
-  '/js/config/GameConfig.js',
-  '/js/config/constants.js',
-  '/js/config/ViewportManager.js',
-  '/js/debug/PerformanceMonitor.js',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/apple-touch-icon.png',
-  '/manifest.json',
-  '/version.json'
+  './',
+  './index.html',
+  './style.css',
+  './js/main.js',
+  './js/gameplay/GameLoop.js',
+  './js/gameplay/Bird.js',
+  './js/gameplay/Pipe.js',
+  './js/gameplay/ParticleSystem.js',
+  './js/effects/Particle.js',
+  './js/effects/ParticlePool.js',
+  './js/background/Star.js',
+  './js/background/CitySkyline.js',
+  './js/background/SynthGrid.js',
+  './js/background/MatrixColumn.js',
+  './js/scoring/ScorePopup.js',
+  './js/ai/AIController.js',
+  './js/audio/AudioController.js',
+  './js/input/InputHandler.js',
+  './js/config/GameConfig.js',
+  './js/config/constants.js',
+  './js/config/ViewportManager.js',
+  './js/debug/PerformanceMonitor.js',
+  './icons/icon-144.png',
+  './icons/icon-192.png',
+  './icons/icon-256.png',
+  './icons/icon-384.png',
+  './icons/icon-512.png',
+  './icons/apple-touch-icon.png',
+  './manifest.json',
+  './version.json'
 ];
 
 // Install event - cache assets with version-based cache name
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Installing...');
   event.waitUntil(
-    fetch('/version.json')
+    fetch('./version.json')
       .then(response => response.json())
       .then(versionInfo => {
         CACHE_NAME = `neon-flap-${versionInfo.hash}`;
@@ -105,7 +108,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         }).catch(() => {
           // Network failed, return cached fallback if available
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         });
       })
   );

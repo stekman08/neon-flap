@@ -173,7 +173,7 @@ if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
 // Register Service Worker for PWA support
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('./sw.js')
             .then((registration) => {
                 console.log('[PWA] Service Worker registered:', registration.scope);
             })
@@ -184,7 +184,7 @@ if ('serviceWorker' in navigator) {
 }
 
 // Display version info
-fetch('/version.json')
+fetch('./version.json')
     .then(response => response.json())
     .then(data => {
         if (versionInfo) {
@@ -252,7 +252,7 @@ if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.
 
 // Load and display version info
 if (versionInfo) {
-    fetch('/version.json')
+    fetch('./version.json')
         .then(response => response.json())
         .then(data => {
             versionInfo.textContent = data.displayFull;
