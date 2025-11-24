@@ -37,6 +37,9 @@ test-results/
 playwright-report/
 *.spec.js-snapshots/
 
+# Exported tracks (personal use)
+exported-tracks/
+
 # Ignore everything except public
 !/public/
 public/version.json
