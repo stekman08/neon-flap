@@ -57,8 +57,8 @@ startBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     ensureAudioReady();
 
-    // Auto-start music when game starts (only if user hasn't made a choice)
-    if (!audioController.isPlayingMusic && !audioController.userHasInteractedWithMusic) {
+    // Auto-start music when game starts (only if user hasn't made a choice and SFX not muted)
+    if (!audioController.isPlayingMusic && !audioController.userHasInteractedWithMusic && !audioController.isSfxMuted) {
         const isPlaying = audioController.toggleMusic(true); // Enable fade-in
         if (isPlaying) {
             musicToggleBtn.classList.add('playing');
@@ -167,6 +167,7 @@ game.loop(game.lastTimestamp);
 // Expose game instance for E2E testing (only in localhost)
 if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
     window.__GAME__ = game;
+    window.__GAME__.audioController = audioController;
 }
 
 // Register Service Worker for PWA support
