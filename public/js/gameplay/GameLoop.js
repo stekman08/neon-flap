@@ -13,7 +13,8 @@ import {
     PIPE_SPAWN_RATE,
     INITIAL_PIPE_SPEED,
     SPEED_INCREMENT,
-    MAX_SPEED
+    MAX_SPEED,
+    BABY_PIPE_SPEED
 } from '../config/constants.js';
 
 export class GameLoop {
@@ -30,7 +31,7 @@ export class GameLoop {
         this.frames = 0;
         this.score = 0;
         this.pipesPassed = 0;
-        this.highScore = localStorage.getItem('neonFlapHighScore') || 0;
+        this.highScore = 0; // Will be loaded in init based on mode
         this.gameHue = 180; // Start at Cyan
         this.isAutoPlay = false;
         this.lastPipeGapCenter = 0;
@@ -83,7 +84,7 @@ export class GameLoop {
         this.uiElements.scoreHud.style.display = 'none'; // Ensure hidden on init
 
         // Reset difficulty
-        this.currentPipeSpeed = INITIAL_PIPE_SPEED;
+        this.currentPipeSpeed = GameConfig.isBabyMode ? BABY_PIPE_SPEED : INITIAL_PIPE_SPEED;
         this.currentPipeGap = GameConfig.initialPipeGap;
 
         // Init stars if empty
@@ -99,6 +100,10 @@ export class GameLoop {
         for (let i = 0; i < colCount; i++) {
             this.matrixRain.push(new MatrixColumn(i * 15, this.canvas, this.ctx));
         }
+
+        // Load High Score based on mode
+        const storageKey = GameConfig.isBabyMode ? 'neonFlapBabyHighScore' : 'neonFlapHighScore';
+        this.highScore = localStorage.getItem(storageKey) || 0;
     }
 
     start() {
@@ -137,7 +142,8 @@ export class GameLoop {
 
         if (!this.isAutoPlay && this.score > this.highScore) {
             this.highScore = this.score;
-            localStorage.setItem('neonFlapHighScore', this.highScore);
+            const storageKey = GameConfig.isBabyMode ? 'neonFlapBabyHighScore' : 'neonFlapHighScore';
+            localStorage.setItem(storageKey, this.highScore);
         }
 
         this.uiElements.finalScoreEl.innerText = this.score;
@@ -241,7 +247,8 @@ export class GameLoop {
 
                     // Difficulty Scaling
                     if (this.pipesPassed % 3 === 0) {
-                        this.currentPipeSpeed = Math.min(this.currentPipeSpeed + SPEED_INCREMENT, MAX_SPEED);
+                        const increment = GameConfig.isBabyMode ? (SPEED_INCREMENT / 2) : SPEED_INCREMENT;
+                        this.currentPipeSpeed = Math.min(this.currentPipeSpeed + increment, MAX_SPEED);
                     }
                 }
 

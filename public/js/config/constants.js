@@ -9,6 +9,8 @@ export const INITIAL_PIPE_GAP = 170
 export const SPEED_INCREMENT = 0.8
 export const MAX_SPEED = 30
 export const MIN_GAP = 120
+export const BABY_PIPE_SPEED = 4.2
+export const BABY_PIPE_GAP = 300
 
 // Canvas Dimensions
 export const CANVAS_WIDTH = 400
