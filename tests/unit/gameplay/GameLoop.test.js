@@ -631,7 +631,7 @@ describe('GameLoop', () => {
         isPlayingMusic: true,
         getCurrentTrack: vi.fn(() => ({
           name: 'Test Track',
-          hue: 60 // Yellow
+          hue: 30 // Neon Orange (System Override)
         }))
       };
 
@@ -647,9 +647,9 @@ describe('GameLoop', () => {
         game.bird.velocity = 0;
       }
 
-      // Should use music hue (60) not score hue (45)
-      expect(game.gameHue).toBeGreaterThan(40);
-      expect(game.gameHue).toBeLessThan(80);
+      // Should use music hue (30) not score hue (45)
+      expect(game.gameHue).toBeGreaterThan(10);
+      expect(game.gameHue).toBeLessThan(50);
       expect(mockAudioController.getCurrentTrack).toHaveBeenCalled();
     });
   });

@@ -324,19 +324,6 @@ export class AudioController {
                 }
             },
             {
-                name: "Neon Funk",
-                hue: 60, // Yellow/Gold
-                tempo: 105,
-                progression: [N.E2, N.G2, N.A2, N.B2], // Em -> G -> A -> B
-                scale: [N.E4, N.G4, N.A4, N.B4, N.D5], // Em Pentatonic
-                style: {
-                    bass: 'funky', // Syncopated, octave jumps
-                    drums: 'breakbeat', // Syncopated kick/snare
-                    pad: 'stabs', // Short chord hits
-                    lead: 'bluesy' // Slide/bend feel
-                }
-            },
-            {
                 name: "Neon Drift",
                 hue: 300, // Magenta
                 tempo: 112, // Similar energy to Horizon
@@ -347,19 +334,6 @@ export class AudioController {
                     drums: 'driving',
                     pad: 'sustained',
                     lead: 'arpeggio'
-                }
-            },
-            {
-                name: "Midnight Drive",
-                hue: 280, // Deep Purple
-                tempo: 95,
-                progression: [N.F2, N.Db2 || 69.30, N.Eb2, N.C2], // Fm -> Db -> Eb -> Cm
-                scale: [N.F4, N.Ab4, N.Bb4, N.C5, N.Eb5], // Fm Pentatonic
-                style: {
-                    bass: 'sustained', // Long, deep notes
-                    drums: 'heavy', // Slow, big reverb snare
-                    pad: 'swelling', // Slow attack pads
-                    lead: 'cinematic' // Slow, reverb-heavy melody
                 }
             },
             {
@@ -402,19 +376,6 @@ export class AudioController {
                 }
             },
             {
-                name: "Bass Protocol",
-                hue: 270, // Electric Violet
-                tempo: 140, // Dubstep Speed
-                progression: [N.F2, N.Db2, N.Bb2, N.C2], // Fm -> Db -> Bbm -> C
-                scale: [N.F4, N.Ab4, N.Bb4, N.C5, N.Eb5], // Fm Pentatonic
-                style: {
-                    bass: 'wobble', // LFO modulated
-                    drums: 'dubstep', // Half-time feel
-                    pad: 'choir', // Eerie vocal
-                    lead: 'screech' // High screech
-                }
-            },
-            {
                 name: "Neon Ascension",
                 hue: 190, // Ice Blue
                 tempo: 128, // Anthem Speed
@@ -425,19 +386,6 @@ export class AudioController {
                     drums: 'cinematic', // Big hits
                     pad: 'strings', // Orchestral
                     lead: 'supersaw' // Detuned glory
-                }
-            },
-            {
-                name: "Black Swan",
-                hue: 270, // Deep Purple/Violet (mysterious)
-                tempo: 75, // Slow, haunting
-                progression: [N.A2, N.F2, N.C2, N.E2], // Am -> F -> C -> E (Dark, cinematic)
-                scale: [N.A4, N.C5, N.D5, N.E5, N.F5], // A minor (natural minor for darkness)
-                style: {
-                    bass: 'drone', // Deep, sustained root notes
-                    drums: 'sparse', // Minimal, atmospheric
-                    pad: 'ethereal', // Slow attack, lots of reverb
-                    lead: 'haunting' // Sparse, reverb-heavy melody
                 }
             },
             {
