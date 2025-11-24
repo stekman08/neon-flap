@@ -6,7 +6,7 @@ test.describe('PWA Functionality', () => {
 
     // Check manifest link exists
     const manifestLink = await page.locator('link[rel="manifest"]');
-    await expect(manifestLink).toHaveAttribute('href', '/manifest.json');
+    await expect(manifestLink).toHaveAttribute('href', 'manifest.json');
 
     // Fetch and validate manifest
     const response = await page.goto('http://localhost:3000/manifest.json');
@@ -19,7 +19,7 @@ test.describe('PWA Functionality', () => {
     expect(manifest.theme_color).toBe('#00ffff');
     expect(manifest.background_color).toBe('#000000');
     expect(manifest.orientation).toBe('portrait-primary');
-    expect(manifest.icons).toHaveLength(2);
+    expect(manifest.icons).toHaveLength(7);
   });
 
   test('should have PWA meta tags', async ({ page }) => {
@@ -98,6 +98,6 @@ test.describe('PWA Functionality', () => {
 
     expect(manifestContent).not.toBeNull();
     expect(manifestContent.display).toBe('standalone');
-    expect(manifestContent.start_url).toBe('/');
+    expect(manifestContent.start_url).toBe('./');
   });
 });
