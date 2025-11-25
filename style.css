@@ -117,7 +117,7 @@ canvas {
     pointer-events: all;
 }
 
-#baby-mode-indicator {
+#turtle-mode-indicator {
     display: none;
     color: #ff71ce;
     font-size: 1.2rem;
@@ -136,7 +136,29 @@ h1 {
 /* Sophisticated Glitch (Chromatic Aberration) */
 .glitch {
     position: relative;
-    animation: glitch-skew 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite both;
+    animation: glitch-skew 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite both, neon-flicker 5s infinite alternate;
+}
+
+@keyframes neon-flicker {
+
+    0%,
+    19%,
+    21%,
+    23%,
+    25%,
+    54%,
+    56%,
+    100% {
+        opacity: 1;
+        text-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 40px #0ff;
+    }
+
+    20%,
+    24%,
+    55% {
+        opacity: 0.5;
+        text-shadow: none;
+    }
 }
 
 .glitch::before,
@@ -405,6 +427,18 @@ button.icon-btn {
     padding: 0;
 }
 
+.neon-icon {
+    width: 32px;
+    height: 32px;
+    filter: drop-shadow(0 0 2px currentColor);
+    transition: all 0.3s ease;
+}
+
+button.icon-btn:hover .neon-icon {
+    filter: drop-shadow(0 0 5px currentColor);
+    transform: scale(1.1);
+}
+
 button.icon-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.3);
@@ -447,11 +481,11 @@ button.icon-btn:hover {
     text-shadow: 0 0 10px #f0f;
 }
 
-#baby-mode-btn {
+#turtle-mode-btn {
     margin-left: 10px;
 }
 
-#baby-mode-btn.active {
+#turtle-mode-btn.active {
     border-color: #ff71ce;
     color: #fff;
     box-shadow: 0 0 20px rgba(255, 113, 206, 0.6), inset 0 0 10px rgba(255, 113, 206, 0.2);
@@ -722,5 +756,34 @@ button.icon-btn:hover {
 @media screen and (max-width: 900px) and (orientation: landscape) {
     #orientation-warning {
         display: flex;
+    }
+}
+
+/* CRT Overlay */
+.crt-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+    animation: crt-flicker 0.15s infinite;
+    box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
+}
+
+@keyframes crt-flicker {
+    0% {
+        opacity: 0.9;
+    }
+
+    50% {
+        opacity: 0.95;
+    }
+
+    100% {
+        opacity: 0.9;
     }
 }

@@ -39,9 +39,10 @@ viewportManager.onResize = () => {
 // Get buttons
 const startBtn = document.getElementById('start-btn');
 const muteBtn = document.getElementById('mute-btn');
-const muteIcon = muteBtn.querySelector('.icon');
-const babyModeBtn = document.getElementById('baby-mode-btn');
-const babyModeIndicator = document.getElementById('baby-mode-indicator');
+const turtleModeBtn = document.getElementById('turtle-mode-btn');
+const turtleModeIndicator = document.getElementById('turtle-mode-indicator');
+const musicToggleBtn = document.getElementById('music-btn');
+const musicOsd = document.getElementById('music-osd');
 const aiBtn = document.getElementById('ai-btn');
 const restartBtn = document.getElementById('restart-btn');
 const installBtn = document.getElementById('install-btn');
@@ -74,6 +75,7 @@ startBtn.addEventListener('click', async (e) => {
         const isPlaying = audioController.toggleMusic(true); // Enable fade-in
         if (isPlaying) {
             musicToggleBtn.classList.add('playing');
+            updateMusicIcon(true);
 
             // Show VCR OSD
             const track = audioController.getCurrentTrack();
@@ -92,15 +94,37 @@ startBtn.addEventListener('click', async (e) => {
     game.start();
 });
 
+// Helper function to update mute button SVG icon
+function updateMuteIcon(isMuted) {
+    const svg = muteBtn.querySelector('svg');
+    if (!svg) return;
+
+    if (isMuted) {
+        // Muted icon (speaker with X)
+        svg.innerHTML = `
+            <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor" />
+            <line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        `;
+    } else {
+        // Unmuted icon (speaker with sound waves)
+        svg.innerHTML = `
+            <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="2" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor" stroke-width="2" />
+        `;
+    }
+}
+
 // Mute Button (Controls SFX only now)
 // Initialize button state based on default (Unmuted)
 muteBtn.classList.add('unmuted');
-muteIcon.textContent = '🔊';
+updateMuteIcon(false);
 
 muteBtn.addEventListener('click', (e) => {
     e.stopPropagation(); // Prevent game start if clicking mute
     const isSfxMuted = audioController.toggleMute();
-    muteIcon.textContent = isSfxMuted ? '🔇' : '🔊';
+    updateMuteIcon(isSfxMuted);
 
     if (isSfxMuted) {
         muteBtn.classList.remove('unmuted');
@@ -109,26 +133,26 @@ muteBtn.addEventListener('click', (e) => {
     }
 });
 
-// Baby Mode Button - Load from localStorage
-const savedBabyMode = localStorage.getItem('neonFlapBabyMode') === 'true';
-GameConfig.toggleBabyMode(savedBabyMode);
-if (savedBabyMode) {
-    babyModeBtn.classList.add('active');
-    babyModeIndicator.style.display = 'block';
+// Turtle Mode Button - Load from localStorage
+const savedTurtleMode = localStorage.getItem('neonFlapTurtleMode') === 'true';
+GameConfig.toggleTurtleMode(savedTurtleMode);
+if (savedTurtleMode) {
+    turtleModeBtn.classList.add('active');
+    turtleModeIndicator.style.display = 'block';
 }
 
-babyModeBtn.addEventListener('click', (e) => {
+turtleModeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isBabyMode = !GameConfig.isBabyMode;
-    GameConfig.toggleBabyMode(isBabyMode);
-    localStorage.setItem('neonFlapBabyMode', isBabyMode);
+    const isTurtleMode = !GameConfig.isTurtleMode;
+    GameConfig.toggleTurtleMode(isTurtleMode);
+    localStorage.setItem('neonFlapTurtleMode', isTurtleMode);
 
-    if (isBabyMode) {
-        babyModeBtn.classList.add('active');
-        babyModeIndicator.style.display = 'block';
+    if (isTurtleMode) {
+        turtleModeBtn.classList.add('active');
+        turtleModeIndicator.style.display = 'block';
     } else {
-        babyModeBtn.classList.remove('active');
-        babyModeIndicator.style.display = 'none';
+        turtleModeBtn.classList.remove('active');
+        turtleModeIndicator.style.display = 'none';
     }
 
     if (game.gameState === 'START') {
@@ -136,13 +160,32 @@ babyModeBtn.addEventListener('click', (e) => {
     }
 });
 
-// Music Button
-const musicOsd = document.getElementById('music-osd');
-const musicToggleBtn = document.getElementById('music-btn');
+// Helper function to update music button SVG icon
+function updateMusicIcon(isPlaying) {
+    const svg = musicToggleBtn.querySelector('svg');
+    if (!svg) return;
 
+    if (isPlaying) {
+        // Playing icon (pause symbol)
+        svg.innerHTML = `
+            <rect x="6" y="4" width="4" height="16" fill="currentColor" rx="1" />
+            <rect x="14" y="4" width="4" height="16" fill="currentColor" rx="1" />
+        `;
+    } else {
+        // Stopped icon (musical note)
+        svg.innerHTML = `
+            <path d="M8 18V5l12-2v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <circle cx="5" cy="18" r="3" fill="currentColor" />
+            <circle cx="17" cy="16" r="3" fill="currentColor" />
+        `;
+    }
+}
+
+// Music Button
 musicToggleBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const isPlaying = audioController.toggleMusic();
+    updateMusicIcon(isPlaying);
 
     if (isPlaying) {
         musicToggleBtn.classList.add('playing');

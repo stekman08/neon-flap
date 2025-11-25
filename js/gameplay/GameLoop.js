@@ -14,7 +14,7 @@ import {
     INITIAL_PIPE_SPEED,
     SPEED_INCREMENT,
     MAX_SPEED,
-    BABY_PIPE_SPEED
+    TURTLE_PIPE_SPEED
 } from '../config/constants.js';
 
 export class GameLoop {
@@ -84,7 +84,7 @@ export class GameLoop {
         this.uiElements.scoreHud.style.display = 'none'; // Ensure hidden on init
 
         // Reset difficulty
-        this.currentPipeSpeed = GameConfig.isBabyMode ? BABY_PIPE_SPEED : INITIAL_PIPE_SPEED;
+        this.currentPipeSpeed = GameConfig.isTurtleMode ? TURTLE_PIPE_SPEED : INITIAL_PIPE_SPEED;
         this.currentPipeGap = GameConfig.initialPipeGap;
 
         // Init stars if empty
@@ -102,7 +102,7 @@ export class GameLoop {
         }
 
         // Load High Score based on mode
-        const storageKey = GameConfig.isBabyMode ? 'neonFlapBabyHighScore' : 'neonFlapHighScore';
+        const storageKey = GameConfig.isTurtleMode ? 'neonFlapTurtleHighScore' : 'neonFlapHighScore';
         this.highScore = localStorage.getItem(storageKey) || 0;
     }
 
@@ -142,7 +142,7 @@ export class GameLoop {
 
         if (!this.isAutoPlay && this.score > this.highScore) {
             this.highScore = this.score;
-            const storageKey = GameConfig.isBabyMode ? 'neonFlapBabyHighScore' : 'neonFlapHighScore';
+            const storageKey = GameConfig.isTurtleMode ? 'neonFlapTurtleHighScore' : 'neonFlapHighScore';
             localStorage.setItem(storageKey, this.highScore);
         }
 
@@ -247,7 +247,7 @@ export class GameLoop {
 
                     // Difficulty Scaling
                     if (this.pipesPassed % 3 === 0) {
-                        const increment = GameConfig.isBabyMode ? (SPEED_INCREMENT / 2) : SPEED_INCREMENT;
+                        const increment = GameConfig.isTurtleMode ? (SPEED_INCREMENT / 2) : SPEED_INCREMENT;
                         this.currentPipeSpeed = Math.min(this.currentPipeSpeed + increment, MAX_SPEED);
                     }
                 }
