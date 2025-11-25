@@ -144,6 +144,20 @@ export class GameLoop {
             this.highScore = this.score;
             const storageKey = GameConfig.isTurtleMode ? 'neonFlapTurtleHighScore' : 'neonFlapHighScore';
             localStorage.setItem(storageKey, this.highScore);
+
+            // Haptic feedback for new highscore (celebration)
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100, 50, 200]);
+            }
+
+            // Track new highscore in analytics
+            if (window.goatcounter && window.goatcounter.count) {
+                window.goatcounter.count({
+                    path: '/event/highscore/' + this.highScore,
+                    title: 'Highscore: ' + this.highScore,
+                    event: true
+                });
+            }
         }
 
         this.uiElements.finalScoreEl.innerText = this.score;
