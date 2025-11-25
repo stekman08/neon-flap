@@ -53,19 +53,39 @@
                 </div>
                 <div class="controls-row">
                     <button id="mute-btn" class="icon-btn" aria-label="Toggle Sound">
-                        <span class="icon">🔊</span>
+                        <svg viewBox="0 0 24 24" class="neon-icon">
+                            <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor" />
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="2" />
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" fill="none" stroke="currentColor"
+                                stroke-width="2" />
+                        </svg>
                     </button>
                     <button id="music-btn" class="icon-btn" aria-label="Toggle Music">
-                        <span class="icon">🎵</span>
+                        <svg viewBox="0 0 24 24" class="neon-icon">
+                            <path d="M8 18V5l12-2v13" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                            <circle cx="5" cy="18" r="3" fill="currentColor" />
+                            <circle cx="17" cy="16" r="3" fill="currentColor" />
+                        </svg>
                     </button>
-                    <button id="baby-mode-btn" class="icon-btn" aria-label="Toggle Baby Mode" title="Baby Mode">
-                        <span class="icon">👶</span>
+                    <button id="turtle-mode-btn" class="icon-btn" aria-label="Toggle Turtle Mode" title="Turtle Mode (Slow)">
+                        <svg viewBox="0 0 24 24" class="neon-icon">
+                            <!-- Turtle Shell -->
+                            <path d="M7 13a5 5 0 0 1 10 0" fill="none" stroke="currentColor" stroke-width="2" />
+                            <path d="M7 13h10" stroke="currentColor" stroke-width="2" />
+                            <!-- Head -->
+                            <circle cx="19" cy="13" r="2" fill="none" stroke="currentColor" stroke-width="2" />
+                            <!-- Legs -->
+                            <path d="M8 13v3 M16 13v3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <!-- Tail -->
+                            <path d="M5 13l-2 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
                     </button>
                 </div>
                 <div id="version-info" class="version-info"></div>
             </div>
             <div id="game-over-screen" class="screen">
-                <h2 id="baby-mode-indicator">BABY MODE</h2>
+                <h2 id="turtle-mode-indicator">TURTLE MODE</h2>
                 <h1 class="glitch" data-text="GAME OVER">GAME OVER</h1>
                 <p>Score: <span id="final-score">0</span></p>
                 <p>Best: <span id="best-score">0</span></p>
@@ -78,11 +98,13 @@
         </div>
     </div>
 
-    <!-- Orientation Warning -->
     <div id="orientation-warning">
         <div class="icon">📱</div>
         <p>Please Rotate Device</p>
     </div>
+
+    <!-- CRT Overlay -->
+    <div class="crt-overlay"></div>
 
     <script type="module" src="js/main.js"></script>
 </body>

@@ -135,20 +135,24 @@ test.describe('Audio System', () => {
     await page.goto('/');
 
     const muteBtn = page.locator('#mute-btn');
-    const muteIcon = muteBtn.locator('.icon');
+    const muteSvg = muteBtn.locator('svg');
 
-    // Default state: unmuted (🔊)
+    // SVG icon should be present
+    await expect(muteSvg).toBeVisible();
+
+    // Default state: unmuted
     await expect(muteBtn).toHaveClass(/unmuted/);
-    await expect(muteIcon).toContainText('🔊');
 
     // Click to mute
     await page.click('#mute-btn');
     await expect(muteBtn).not.toHaveClass(/unmuted/);
-    await expect(muteIcon).toContainText('🔇');
+
+    // SVG should still be present (content changes dynamically)
+    await expect(muteSvg).toBeVisible();
 
     // Click to unmute
     await page.click('#mute-btn');
     await expect(muteBtn).toHaveClass(/unmuted/);
-    await expect(muteIcon).toContainText('🔊');
+    await expect(muteSvg).toBeVisible();
   });
 });
