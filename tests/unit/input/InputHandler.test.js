@@ -13,7 +13,7 @@ describe('InputHandler', () => {
     // Create a proper mock that can be modified
     const audioCtx = {
       state: 'suspended',
-      resume: vi.fn()
+      resume: vi.fn(() => Promise.resolve())
     };
 
     // Mock audio controller
@@ -182,6 +182,56 @@ describe('InputHandler', () => {
       keydownHandler(event);
 
       expect(audioController.init).not.toHaveBeenCalled();
+    });
+
+    it('should handle AudioContext.resume() rejection gracefully', async () => {
+      // Simulate AudioContext.resume() throwing an error (e.g., on iOS Safari restrictions)
+      const resumeError = new DOMException('The play() request was interrupted', 'NotAllowedError');
+      audioController.ctx.resume = vi.fn(() => Promise.reject(resumeError));
+      audioController.ctx.state = 'suspended';
+      audioController.initialized = false;
+      audioController.isMuted = false;
+
+      inputHandler = new InputHandler(game);
+
+      const keydownHandler = window.addEventListener.mock.calls.find(
+        call => call[0] === 'keydown'
+      )[1];
+
+      const event = { code: 'Space', preventDefault: vi.fn() };
+
+      // This should NOT throw - the error should be handled gracefully
+      expect(() => keydownHandler(event)).not.toThrow();
+
+      // Game should still start despite audio failure
+      expect(game.start).toHaveBeenCalled();
+    });
+
+    it('should continue to handle input after AudioContext.resume() fails', async () => {
+      // First interaction: resume fails
+      const resumeError = new DOMException('Not allowed', 'NotAllowedError');
+      audioController.ctx.resume = vi.fn(() => Promise.reject(resumeError));
+      audioController.ctx.state = 'suspended';
+      audioController.initialized = false;
+      audioController.isMuted = false;
+
+      inputHandler = new InputHandler(game);
+      game.gameState = 'START';
+
+      const keydownHandler = window.addEventListener.mock.calls.find(
+        call => call[0] === 'keydown'
+      )[1];
+
+      // First input - starts game
+      keydownHandler({ code: 'Space', preventDefault: vi.fn() });
+      expect(game.start).toHaveBeenCalled();
+
+      // Simulate game state changed to PLAYING
+      game.gameState = 'PLAYING';
+
+      // Second input - should still work for jumping
+      keydownHandler({ code: 'Space', preventDefault: vi.fn() });
+      expect(game.bird.jump).toHaveBeenCalled();
     });
   });
 });

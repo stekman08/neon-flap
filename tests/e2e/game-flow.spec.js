@@ -122,3 +122,62 @@ test.describe('Game Flow', () => {
     expect(parseInt(scoreText)).toBe(newScore);
   });
 });
+
+test.describe('localStorage Error Handling', () => {
+  test('should load game even when localStorage.getItem throws', async ({ page }) => {
+    // Mock localStorage to throw on getItem (simulates private/incognito mode)
+    await page.addInitScript(() => {
+      const originalGetItem = Storage.prototype.getItem;
+      Storage.prototype.getItem = function(key) {
+        if (key === 'neonFlapTurtleMode') {
+          throw new DOMException('The operation is insecure', 'SecurityError');
+        }
+        return originalGetItem.call(this, key);
+      };
+    });
+
+    // Page should still load without crashing
+    await page.goto('/');
+
+    // Start screen should be visible
+    const startScreen = page.locator('#start-screen');
+    await expect(startScreen).toBeVisible();
+    await expect(startScreen).toHaveClass(/active/);
+
+    // Game should be initialized
+    const gameState = await page.evaluate(() => window.__GAME__?.gameState);
+    expect(gameState).toBe('START');
+  });
+
+  test('should handle localStorage.setItem failure gracefully', async ({ page }) => {
+    // Mock localStorage to throw on setItem (simulates quota exceeded)
+    await page.addInitScript(() => {
+      const originalSetItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function(key, value) {
+        if (key === 'neonFlapTurtleMode') {
+          throw new DOMException('QuotaExceededError', 'QuotaExceededError');
+        }
+        return originalSetItem.call(this, key, value);
+      };
+    });
+
+    await page.goto('/');
+
+    // Click turtle mode button - should not crash even if localStorage fails
+    const turtleModeBtn = page.locator('#turtle-mode-btn');
+    await expect(turtleModeBtn).toBeVisible();
+
+    // This should NOT throw or crash the page
+    await turtleModeBtn.click();
+
+    // Button should still toggle visually even if save failed
+    await expect(turtleModeBtn).toHaveClass(/active/);
+
+    // Game should still work
+    const startBtn = page.locator('#start-btn');
+    await startBtn.click();
+
+    const gameState = await page.evaluate(() => window.__GAME__?.gameState);
+    expect(gameState).toBe('PLAYING');
+  });
+});

@@ -525,6 +525,154 @@ describe('GameLoop', () => {
     });
   });
 
+  describe('localStorage error handling', () => {
+    it('should handle localStorage.getItem throwing in private/incognito mode', () => {
+      // Simulate private browsing mode where localStorage throws
+      global.localStorage = {
+        getItem: vi.fn(() => {
+          throw new DOMException('The operation is insecure', 'SecurityError');
+        }),
+        setItem: vi.fn()
+      };
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+
+      // This should NOT throw - the error should be handled gracefully
+      expect(() => game.init()).not.toThrow();
+
+      // Game should still initialize with default high score
+      expect(game.highScore).toBeDefined();
+    });
+
+    it('should handle localStorage.setItem throwing when saving high score', () => {
+      global.localStorage = {
+        getItem: vi.fn(() => '10'),
+        setItem: vi.fn(() => {
+          throw new DOMException('QuotaExceededError', 'QuotaExceededError');
+        })
+      };
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.score = 20;
+      game.highScore = 10;
+
+      // This should NOT throw - the error should be handled gracefully
+      expect(() => game.gameOver()).not.toThrow();
+
+      // High score should still be updated in memory
+      expect(game.highScore).toBe(20);
+    });
+
+    it('should continue game flow when localStorage is completely unavailable', () => {
+      // Simulate localStorage being completely undefined
+      const originalLocalStorage = global.localStorage;
+      delete global.localStorage;
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+
+      // Game should still work without localStorage
+      expect(() => game.init()).not.toThrow();
+      expect(game.gameState).toBe('START');
+
+      // Restore
+      global.localStorage = originalLocalStorage;
+    });
+  });
+
+  describe('GoatCounter analytics error handling', () => {
+    beforeEach(() => {
+      // Reset goatcounter mock
+      delete global.window.goatcounter;
+    });
+
+    it('should handle goatcounter.count() throwing an error', () => {
+      // Mock goatcounter that throws
+      global.window.goatcounter = {
+        count: vi.fn(() => {
+          throw new Error('Rate limit exceeded');
+        })
+      };
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.score = 20;
+      game.highScore = 10;
+      game.isAutoPlay = false;
+
+      // This should NOT throw - analytics error should be handled gracefully
+      expect(() => game.gameOver()).not.toThrow();
+
+      // Game should still function
+      expect(game.gameState).toBe('GAMEOVER');
+      expect(game.highScore).toBe(20);
+    });
+
+    it('should handle goatcounter.count() returning rejected promise', async () => {
+      // Mock goatcounter that returns a rejected promise
+      global.window.goatcounter = {
+        count: vi.fn(() => Promise.reject(new Error('Network error')))
+      };
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.score = 30;
+      game.highScore = 10;
+      game.isAutoPlay = false;
+
+      // This should NOT throw
+      expect(() => game.gameOver()).not.toThrow();
+
+      // Wait for any promises to settle
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // Game should still be in game over state
+      expect(game.gameState).toBe('GAMEOVER');
+    });
+
+    it('should handle goatcounter being undefined', () => {
+      global.window.goatcounter = undefined;
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.score = 25;
+      game.highScore = 10;
+
+      // This should NOT throw
+      expect(() => game.gameOver()).not.toThrow();
+    });
+
+    it('should handle goatcounter.count being undefined', () => {
+      global.window.goatcounter = {};
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.score = 25;
+      game.highScore = 10;
+
+      // This should NOT throw
+      expect(() => game.gameOver()).not.toThrow();
+    });
+
+    it('should handle goatcounter returning unexpected response', () => {
+      // Mock goatcounter that returns unexpected data
+      global.window.goatcounter = {
+        count: vi.fn(() => ({ error: 'Daily limit reached', code: 429 }))
+      };
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.score = 50;
+      game.highScore = 10;
+
+      // This should NOT throw
+      expect(() => game.gameOver()).not.toThrow();
+
+      // Game should still work
+      expect(game.highScore).toBe(50);
+    });
+  });
+
   describe('reactive theme', () => {
     it('should start with cyan hue (180 degrees)', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
@@ -651,6 +799,55 @@ describe('GameLoop', () => {
       expect(game.gameHue).toBeGreaterThan(10);
       expect(game.gameHue).toBeLessThan(55);
       expect(mockAudioController.getCurrentTrack).toHaveBeenCalled();
+    });
+  });
+
+  describe('division by zero guard', () => {
+    it('should handle currentPipeSpeed being 0', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.currentPipeSpeed = 0;
+
+      // This should NOT throw or result in Infinity
+      expect(() => game.update(1)).not.toThrow();
+    });
+
+    it('should handle currentPipeSpeed being NaN', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.currentPipeSpeed = NaN;
+
+      // This should NOT throw
+      expect(() => game.update(1)).not.toThrow();
+    });
+  });
+
+  describe('UI element null-checks in gameOver', () => {
+    it('should handle missing finalScoreEl gracefully', () => {
+      // Use full uiElements for init(), then set finalScoreEl to null before gameOver()
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.uiElements.finalScoreEl = null;
+
+      expect(() => game.gameOver()).not.toThrow();
+    });
+
+    it('should handle missing bestScoreEl gracefully', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.uiElements.bestScoreEl = null;
+
+      expect(() => game.gameOver()).not.toThrow();
+    });
+
+    it('should handle missing scoreHud in gameOver gracefully', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.uiElements.scoreHud = null;
+
+      expect(() => game.gameOver()).not.toThrow();
     });
   });
 });

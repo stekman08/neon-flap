@@ -103,7 +103,12 @@ export class GameLoop {
 
         // Load High Score based on mode
         const storageKey = GameConfig.isTurtleMode ? 'neonFlapTurtleHighScore' : 'neonFlapHighScore';
-        this.highScore = localStorage.getItem(storageKey) || 0;
+        try {
+            this.highScore = localStorage.getItem(storageKey) || 0;
+        } catch (e) {
+            // localStorage may be unavailable in private/incognito mode
+            this.highScore = 0;
+        }
     }
 
     start() {
@@ -143,7 +148,11 @@ export class GameLoop {
         if (!this.isAutoPlay && this.score > this.highScore) {
             this.highScore = this.score;
             const storageKey = GameConfig.isTurtleMode ? 'neonFlapTurtleHighScore' : 'neonFlapHighScore';
-            localStorage.setItem(storageKey, this.highScore);
+            try {
+                localStorage.setItem(storageKey, this.highScore);
+            } catch (e) {
+                // localStorage may be unavailable or quota exceeded
+            }
 
             // Haptic feedback for new highscore (celebration)
             if (navigator.vibrate) {
@@ -151,19 +160,28 @@ export class GameLoop {
             }
 
             // Track new highscore in analytics
-            if (window.goatcounter && window.goatcounter.count) {
-                window.goatcounter.count({
-                    path: '/event/highscore/' + this.highScore,
-                    title: 'Highscore: ' + this.highScore,
-                    event: true
-                });
+            try {
+                if (window.goatcounter && window.goatcounter.count) {
+                    window.goatcounter.count({
+                        path: '/event/highscore/' + this.highScore,
+                        title: 'Highscore: ' + this.highScore,
+                        event: true
+                    });
+                }
+            } catch (e) {
+                // Analytics error should not break the game
             }
         }
 
-        this.uiElements.finalScoreEl.innerText = this.score;
-        this.uiElements.bestScoreEl.innerText = this.highScore;
-
-        this.uiElements.scoreHud.style.display = 'none';
+        if (this.uiElements.finalScoreEl) {
+            this.uiElements.finalScoreEl.innerText = this.score;
+        }
+        if (this.uiElements.bestScoreEl) {
+            this.uiElements.bestScoreEl.innerText = this.highScore;
+        }
+        if (this.uiElements.scoreHud) {
+            this.uiElements.scoreHud.style.display = 'none';
+        }
     }
 
     update(deltaTime) {
@@ -208,7 +226,8 @@ export class GameLoop {
             // Pipe Spawning - time-based instead of frame-based
             // Convert PIPE_SPAWN_RATE from frames to milliseconds (assuming 60fps base)
             const baseSpawnInterval = (PIPE_SPAWN_RATE / 60) * 1000; // ms
-            const currentSpawnInterval = Math.max(1000, baseSpawnInterval * (INITIAL_PIPE_SPEED / this.currentPipeSpeed));
+            const safePipeSpeed = this.currentPipeSpeed || INITIAL_PIPE_SPEED; // Guard against division by zero
+            const currentSpawnInterval = Math.max(1000, baseSpawnInterval * (INITIAL_PIPE_SPEED / safePipeSpeed));
 
             this.timeSinceLastPipe += (16.67 * deltaTime); // Add elapsed time
 

@@ -23,6 +23,11 @@ export class Pipe {
         minCenter = Math.max(minCenter, padding + safeGap / 2);
         maxCenter = Math.min(maxCenter, canvas.height - padding - safeGap / 2);
 
+        // Guard against invalid bounds (maxCenter < minCenter)
+        if (maxCenter < minCenter) {
+            maxCenter = minCenter;
+        }
+
         // Randomize within constraints
         const center = Math.random() * (maxCenter - minCenter) + minCenter;
 

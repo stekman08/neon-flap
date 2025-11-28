@@ -121,4 +121,34 @@ describe('Pipe', () => {
       expect(mockFillStyle).toHaveBeenCalled();
     });
   });
+
+  describe('bounds calculation guard', () => {
+    it('should handle edge case where maxCenter < minCenter', () => {
+      // Create a very small canvas where bounds calculation could invert
+      const smallCanvas = {
+        width: 100,
+        height: 100 // Very small height
+      };
+
+      // With a gap of 80 and padding, minCenter could exceed maxCenter
+      const largeGap = 80;
+      const lastPipeGapCenter = 50;
+
+      // This should NOT throw even with impossible constraints
+      expect(() => {
+        new Pipe(smallCanvas, ctx, largeGap, largeGap, lastPipeGapCenter, 0, updateGapCenter);
+      }).not.toThrow();
+    });
+
+    it('should create valid pipe even with extreme lastPipeGapCenter', () => {
+      // lastPipeGapCenter at edge of screen
+      const extremeCenter = 50; // Very close to top
+
+      const pipe = new Pipe(canvas, ctx, 170, 120, extremeCenter, 0, updateGapCenter);
+
+      // Pipe should have valid dimensions
+      expect(pipe.topHeight).toBeGreaterThanOrEqual(0);
+      expect(pipe.bottomY).toBeLessThanOrEqual(canvas.height);
+    });
+  });
 });
