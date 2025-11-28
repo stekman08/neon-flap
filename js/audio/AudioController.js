@@ -113,7 +113,9 @@ export class AudioController {
         if (!this.initialized) {
             this.init();
             if (this.ctx && this.ctx.state === 'suspended') {
-                this.ctx.resume();
+                this.ctx.resume().catch(() => {
+                    // Audio context resume failed - ignore silently
+                });
             }
         }
         // Immediate mute handling for SFX channel only
@@ -253,13 +255,22 @@ export class AudioController {
             this.musicGain.gain.value = MASTER_VOLUME;
         }
 
+        // Clear any orphan timer from previous session
+        if (this.timerID) {
+            clearTimeout(this.timerID);
+            this.timerID = null;
+        }
+
         this.isPlayingMusic = true;
         this.beatCount = 0;
         this.nextNoteTime = this.ctx.currentTime + 0.2;
 
         if (!this.tracks) this.initTracks();
 
-        console.log(`Now Playing: ${this.tracks[this.currentTrackIndex].name}`);
+        const track = this.tracks[this.currentTrackIndex];
+        if (track) {
+            console.log(`Now Playing: ${track.name}`);
+        }
 
         this.scheduleMusic();
     }
@@ -286,7 +297,11 @@ export class AudioController {
             return false;
         } else {
             if (!this.initialized) this.init();
-            if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume().catch(() => {
+                    // Audio context resume failed - ignore silently
+                });
+            }
             this.playMusic(fadeIn);
             return true;
         }
@@ -413,7 +428,15 @@ export class AudioController {
     scheduleMusic() {
         if (!this.isPlayingMusic) return;
 
+        // Safety checks for tracks array
+        if (!this.tracks || !this.tracks.length) return;
+        if (this.currentTrackIndex < 0 || this.currentTrackIndex >= this.tracks.length) {
+            this.currentTrackIndex = 0;
+        }
+
         const track = this.tracks[this.currentTrackIndex];
+        if (!track) return;
+
         const secondsPerBeat = 60.0 / track.tempo;
         const lookahead = 0.1;
 
@@ -779,6 +802,7 @@ export class AudioController {
     }
 
     playKick(time) {
+        if (!this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
@@ -796,6 +820,7 @@ export class AudioController {
     }
 
     playSnare(time, bigReverb = false) {
+        if (!this.ctx) return;
         const bufferSize = this.ctx.sampleRate * 0.2;
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -829,6 +854,7 @@ export class AudioController {
     }
 
     playHiHat(time, open) {
+        if (!this.ctx) return;
         const bufferSize = this.ctx.sampleRate * (open ? 0.3 : 0.05);
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -853,6 +879,7 @@ export class AudioController {
     }
 
     playBitKick(time) {
+        if (!this.ctx) return;
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
@@ -871,6 +898,7 @@ export class AudioController {
     }
 
     playBitSnare(time, isHat = false) {
+        if (!this.ctx) return;
         const bufferSize = this.ctx.sampleRate * (isHat ? 0.05 : 0.1);
         const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const data = buffer.getChannelData(0);

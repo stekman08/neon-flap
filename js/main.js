@@ -79,14 +79,16 @@ startBtn.addEventListener('click', async (e) => {
 
             // Show VCR OSD
             const track = audioController.getCurrentTrack();
-            const index = audioController.currentTrackIndex + 1;
-            const total = audioController.tracks.length;
-            musicOsd.innerText = `▶ PLAY ${index}/${total}: ${track.name.toUpperCase()}`;
-            musicOsd.classList.add('active');
+            if (track && audioController.tracks) {
+                const index = audioController.currentTrackIndex + 1;
+                const total = audioController.tracks.length;
+                musicOsd.innerText = `▶ PLAY ${index}/${total}: ${track.name.toUpperCase()}`;
+                musicOsd.classList.add('active');
 
-            setTimeout(() => {
-                musicOsd.classList.remove('active');
-            }, 3000);
+                setTimeout(() => {
+                    musicOsd.classList.remove('active');
+                }, 3000);
+            }
         }
     }
 
@@ -134,7 +136,12 @@ muteBtn.addEventListener('click', (e) => {
 });
 
 // Turtle Mode Button - Load from localStorage
-const savedTurtleMode = localStorage.getItem('neonFlapTurtleMode') === 'true';
+let savedTurtleMode = false;
+try {
+    savedTurtleMode = localStorage.getItem('neonFlapTurtleMode') === 'true';
+} catch (e) {
+    // localStorage may be unavailable in private/incognito mode
+}
 GameConfig.toggleTurtleMode(savedTurtleMode);
 if (savedTurtleMode) {
     turtleModeBtn.classList.add('active');
@@ -145,7 +152,11 @@ turtleModeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     const isTurtleMode = !GameConfig.isTurtleMode;
     GameConfig.toggleTurtleMode(isTurtleMode);
-    localStorage.setItem('neonFlapTurtleMode', isTurtleMode);
+    try {
+        localStorage.setItem('neonFlapTurtleMode', isTurtleMode);
+    } catch (e) {
+        // localStorage may be unavailable or quota exceeded
+    }
 
     if (isTurtleMode) {
         turtleModeBtn.classList.add('active');
@@ -192,16 +203,17 @@ musicToggleBtn.addEventListener('click', (e) => {
 
         // Show VCR OSD
         const track = audioController.getCurrentTrack();
-        const index = audioController.currentTrackIndex + 1;
-        const total = audioController.tracks.length;
-        musicOsd.innerText = `▶ PLAY ${index}/${total}: ${track.name.toUpperCase()}`;
-        musicOsd.classList.add('active');
+        if (track && audioController.tracks) {
+            const index = audioController.currentTrackIndex + 1;
+            const total = audioController.tracks.length;
+            musicOsd.innerText = `▶ PLAY ${index}/${total}: ${track.name.toUpperCase()}`;
+            musicOsd.classList.add('active');
 
-        // Hide after 3 seconds
-        setTimeout(() => {
-            musicOsd.classList.remove('active');
-        }, 3000);
-
+            // Hide after 3 seconds
+            setTimeout(() => {
+                musicOsd.classList.remove('active');
+            }, 3000);
+        }
     } else {
         musicToggleBtn.classList.remove('playing');
 

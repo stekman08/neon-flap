@@ -37,7 +37,9 @@ export class InputHandler {
         if (this.game.audioController && !this.game.audioController.initialized) {
             this.game.audioController.init();
             if (!this.game.audioController.isMuted && this.game.audioController.ctx && this.game.audioController.ctx.state === 'suspended') {
-                this.game.audioController.ctx.resume();
+                this.game.audioController.ctx.resume().catch(() => {
+                    // Audio context resume failed - ignore silently
+                });
             }
         }
 
