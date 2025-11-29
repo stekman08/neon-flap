@@ -15,7 +15,7 @@ export class AIController {
         }
 
         if (!nextPipe) {
-            if (bird.y > canvas.height / 2 && bird.velocity >= 0) {
+            if (bird.y >= canvas.height / 2 && bird.velocity >= 0) {
                 bird.jump();
             }
             return;
