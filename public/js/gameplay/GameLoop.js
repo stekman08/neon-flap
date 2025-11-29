@@ -223,6 +223,9 @@ export class GameLoop {
             }
             this.bird.update(this.gameHue, deltaTime, this.currentPipeSpeed);
 
+            // Floor collision in Bird.update() may have triggered game over
+            if (this.gameState !== 'PLAYING') return;
+
             // Pipe Spawning - time-based instead of frame-based
             // Convert PIPE_SPAWN_RATE from frames to milliseconds (assuming 60fps base)
             const baseSpawnInterval = (PIPE_SPAWN_RATE / 60) * 1000; // ms
@@ -245,11 +248,13 @@ export class GameLoop {
 
                 // Collision Detection
                 if (
+                    this.gameState === 'PLAYING' &&
                     this.bird.x < p.x + p.width &&
                     this.bird.x + this.bird.width > p.x &&
                     (this.bird.y < p.topHeight || this.bird.y + this.bird.height > p.bottomY)
                 ) {
                     this.gameOver();
+                    return;
                 }
 
                 // Score

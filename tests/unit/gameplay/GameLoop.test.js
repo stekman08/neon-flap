@@ -178,6 +178,92 @@ describe('GameLoop', () => {
     });
   });
 
+  describe('collision handling', () => {
+    it('should stop update loop immediately after pipe collision', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+
+      // Position bird to collide with pipe
+      game.bird.x = 100;
+      game.bird.y = 100;
+      game.bird.width = 30;
+      game.bird.height = 30;
+
+      game.pipes = [{
+        x: 90,
+        width: 60,
+        topHeight: 200, // Bird at y=100 is above gap (collision)
+        bottomY: 400,
+        passed: false,
+        update: vi.fn()
+      }];
+
+      const gameOverSpy = vi.spyOn(game, 'gameOver');
+
+      game.update(1);
+
+      expect(gameOverSpy).toHaveBeenCalledTimes(1);
+      expect(game.gameState).toBe('GAMEOVER');
+    });
+
+    it('should not call gameOver multiple times on continued collision', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+
+      game.bird.x = 100;
+      game.bird.y = 100;
+      game.bird.width = 30;
+      game.bird.height = 30;
+
+      game.pipes = [{
+        x: 90,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: vi.fn()
+      }];
+
+      const gameOverSpy = vi.spyOn(game, 'gameOver');
+
+      // Call update multiple times (simulating multiple frames)
+      game.update(1);
+      game.update(1);
+      game.update(1);
+
+      // gameOver should only be called once
+      expect(gameOverSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should stop processing after floor collision triggers game over', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+
+      // Position bird at floor
+      game.bird.y = canvas.height + 10;
+
+      // Add a pipe that would also cause collision
+      game.pipes = [{
+        x: game.bird.x,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: vi.fn()
+      }];
+
+      const gameOverSpy = vi.spyOn(game, 'gameOver');
+
+      game.update(1);
+
+      // Should only trigger once (floor collision), not twice
+      expect(gameOverSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('scoring', () => {
     it('should increment score when passing pipe', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
