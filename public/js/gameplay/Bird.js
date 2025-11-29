@@ -14,7 +14,8 @@ export class Bird {
 
         this.y = canvas.height / 2;
         this.velocity = 0;
-        this.exhaust = []; // Particle based exhaust
+        this.exhaust = [];
+        this.contrail = [];
     }
 
     /**
@@ -28,6 +29,27 @@ export class Bird {
     }
 
     draw(ctx, gameHue) {
+        // Draw contrail behind the ship
+        if (this.contrail.length > 1) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(this.contrail[0].x, this.contrail[0].y);
+
+            for (let i = 1; i < this.contrail.length; i++) {
+                const p = this.contrail[i];
+                ctx.lineTo(p.x, p.y);
+            }
+
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = `hsla(${gameHue}, 100%, 70%, 0.3)`;
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = `hsla(${gameHue}, 100%, 50%, 0.5)`;
+            ctx.stroke();
+            ctx.restore();
+        }
+
         const currentColor = `hsl(${gameHue}, 100%, 50%)`;
         const centerX = this.x + this.width / 2;
         const centerY = this.y + this.height / 2;
@@ -98,7 +120,7 @@ export class Bird {
         ctx.restore();
     }
 
-    update(gameHue, deltaTime = 1) {
+    update(gameHue, deltaTime = 1, currentSpeed = 0) {
         this.velocity += GameConfig.gravity * deltaTime;
         this.y += this.velocity * deltaTime;
 
@@ -134,6 +156,19 @@ export class Bird {
                 this.exhaust.splice(i, 1);
                 i--;
             }
+        }
+
+        // Update Contrail - add new point at engine position
+        this.contrail.push({ x: engineX, y: engineY });
+
+        // Limit contrail length
+        if (this.contrail.length > 40) {
+            this.contrail.shift();
+        }
+
+        // Move contrail points to the left (simulate world movement)
+        for (let i = 0; i < this.contrail.length; i++) {
+            this.contrail[i].x -= currentSpeed * deltaTime;
         }
 
         // Floor collision

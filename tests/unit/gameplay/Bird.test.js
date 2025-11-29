@@ -134,6 +134,38 @@ describe('Bird', () => {
     });
   });
 
+  describe('contrail', () => {
+    it('should add contrail points when updating', () => {
+      const bird = new Bird(canvas, ctx, 0, createParticles, gameOver);
+
+      bird.update(0, 1, 5);
+
+      expect(bird.contrail.length).toBe(1);
+      expect(bird.contrail[0]).toHaveProperty('x');
+      expect(bird.contrail[0]).toHaveProperty('y');
+    });
+
+    it('should limit contrail length to 40 points', () => {
+      const bird = new Bird(canvas, ctx, 0, createParticles, gameOver);
+
+      for (let i = 0; i < 50; i++) {
+        bird.update(0, 1, 5);
+      }
+
+      expect(bird.contrail.length).toBe(40);
+    });
+
+    it('should move contrail points left based on currentSpeed', () => {
+      const bird = new Bird(canvas, ctx, 0, createParticles, gameOver);
+      bird.update(0, 1, 0);
+      const initialX = bird.contrail[0].x;
+
+      bird.update(0, 1, 10);
+
+      expect(bird.contrail[0].x).toBe(initialX - 10);
+    });
+  });
+
   describe('drawing', () => {
     it('should call canvas drawing methods', () => {
       const bird = new Bird(canvas, ctx, 0, createParticles, gameOver);

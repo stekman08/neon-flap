@@ -221,7 +221,7 @@ export class GameLoop {
             if (this.isAutoPlay) {
                 AIController.performAI(this.bird, this.pipes, this.currentPipeGap, this.canvas);
             }
-            this.bird.update(this.gameHue, deltaTime);
+            this.bird.update(this.gameHue, deltaTime, this.currentPipeSpeed);
 
             // Pipe Spawning - time-based instead of frame-based
             // Convert PIPE_SPAWN_RATE from frames to milliseconds (assuming 60fps base)
