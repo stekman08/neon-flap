@@ -57,14 +57,12 @@ export class AudioController {
 
     init() {
         if (this.initialized) {
-            console.log('[Audio] Already initialized, state:', this.ctx?.state);
             return;
         }
 
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             this.ctx = new AudioContext();
-            console.log('[Audio] AudioContext created, state:', this.ctx.state);
 
             // Master Chain
             this.masterGain = this.ctx.createGain();
@@ -102,7 +100,6 @@ export class AudioController {
             this.masterGain.connect(this.ctx.destination);
 
             this.initialized = true;
-            console.log('[Audio] AudioController initialized successfully');
         } catch (e) {
             console.error('[Audio] Web Audio API not supported:', e);
         }
@@ -268,9 +265,6 @@ export class AudioController {
         if (!this.tracks) this.initTracks();
 
         const track = this.tracks[this.currentTrackIndex];
-        if (track) {
-            console.log(`Now Playing: ${track.name}`);
-        }
 
         this.scheduleMusic();
     }
