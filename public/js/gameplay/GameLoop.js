@@ -43,6 +43,8 @@ export class GameLoop {
         this.shake = 0; // Screen shake magnitude
         this.gameOverTime = 0; // Timestamp when game over occurred (for restart cooldown)
         this.screenFlash = 0; // Screen flash intensity for milestone celebrations
+        this.deathFlash = 0; // Red flash on death
+        this.deathHueShift = 0; // Temporary hue shift towards red on death
 
         // Arrays
         this.bird = null;
@@ -171,14 +173,19 @@ export class GameLoop {
 
         this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2);
         if (this.audioController) this.audioController.playCrash();
-        this.shake = 20;
+        this.shake = 25; // Stronger shake
+        this.deathFlash = 0.8; // Bright red flash
+        this.deathHueShift = 1.0; // Full shift towards red
 
         // Haptic feedback (heavy)
         if (navigator.vibrate) {
             navigator.vibrate(200);
         }
 
-        this.uiElements.gameOverScreen.classList.add('active');
+        // Delay showing game over screen for dramatic effect
+        setTimeout(() => {
+            this.uiElements.gameOverScreen.classList.add('active');
+        }, 300);
 
         if (!this.isAutoPlay && this.score > this.highScore) {
             this.highScore = this.score;
@@ -244,7 +251,15 @@ export class GameLoop {
         // Smooth interpolation towards target hue with breathing oscillation
         const time = Date.now() * 0.001;
         const oscillation = Math.sin(time) * 20; // +/- 20 degrees breathing
-        const currentBaseHue = targetHue + oscillation;
+        let currentBaseHue = targetHue + oscillation;
+
+        // Death hue shift - push towards red/magenta (0/360 degrees)
+        if (this.deathHueShift > 0) {
+            currentBaseHue = currentBaseHue + (360 - currentBaseHue) * this.deathHueShift * 0.5;
+            this.deathHueShift *= 0.95; // Decay
+            if (this.deathHueShift < 0.01) this.deathHueShift = 0;
+        }
+
         this.gameHue = this.gameHue + (currentBaseHue - this.gameHue) * 0.05;
 
         this.stars.forEach(star => star.update(this.currentPipeSpeed, deltaTime));
@@ -426,6 +441,14 @@ export class GameLoop {
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.screenFlash -= 0.02; // Fade out
             if (this.screenFlash < 0) this.screenFlash = 0;
+        }
+
+        // Death flash - dramatic red/magenta overlay
+        if (this.deathFlash > 0) {
+            this.ctx.fillStyle = `rgba(255, 50, 100, ${this.deathFlash})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.deathFlash *= 0.85; // Fast decay
+            if (this.deathFlash < 0.01) this.deathFlash = 0;
         }
 
         this.performanceMonitor.markDrawEnd();
