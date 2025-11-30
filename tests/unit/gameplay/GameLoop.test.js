@@ -182,6 +182,33 @@ describe('GameLoop', () => {
       // Check particle count directly from the new ParticleSystem
       expect(game.particleSystem.particles.length).toBe(50);
     });
+
+    it('should trigger death flash effect', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+
+      game.gameOver();
+
+      expect(game.deathFlash).toBe(0.8);
+    });
+
+    it('should trigger death hue shift effect', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+
+      game.gameOver();
+
+      expect(game.deathHueShift).toBe(1.0);
+    });
+
+    it('should trigger stronger screen shake', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+
+      game.gameOver();
+
+      expect(game.shake).toBe(25);
+    });
   });
 
   describe('collision handling', () => {
@@ -317,6 +344,141 @@ describe('GameLoop', () => {
       game.update(1);
 
       expect(game.score).toBe(2);
+    });
+  });
+
+  describe('milestone celebrations', () => {
+    it('should trigger screen flash at score 10', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.bird.x = 100;
+      game.score = 9; // Will become 10 after passing pipe
+
+      game.pipes = [{
+        x: 20,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: vi.fn()
+      }];
+
+      game.update(1);
+
+      expect(game.score).toBe(10);
+      expect(game.screenFlash).toBe(0.4);
+    });
+
+    it('should trigger screen flash at score 25', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.bird.x = 100;
+      game.score = 24;
+
+      game.pipes = [{
+        x: 20,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: vi.fn()
+      }];
+
+      game.update(1);
+
+      expect(game.score).toBe(25);
+      expect(game.screenFlash).toBe(0.4);
+    });
+
+    it('should trigger screen flash at score 50', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.bird.x = 100;
+      game.score = 49;
+
+      game.pipes = [{
+        x: 20,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: vi.fn()
+      }];
+
+      game.update(1);
+
+      expect(game.score).toBe(50);
+      expect(game.screenFlash).toBe(0.4);
+    });
+
+    it('should trigger screen flash at score 100', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.bird.x = 100;
+      game.score = 99;
+
+      game.pipes = [{
+        x: 20,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: vi.fn()
+      }];
+
+      game.update(1);
+
+      expect(game.score).toBe(100);
+      expect(game.screenFlash).toBe(0.4);
+    });
+
+    it('should NOT trigger screen flash at non-milestone scores', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.bird.x = 100;
+      game.score = 14; // Will become 15
+
+      game.pipes = [{
+        x: 20,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: vi.fn()
+      }];
+
+      game.update(1);
+
+      expect(game.score).toBe(15);
+      expect(game.screenFlash).toBe(0);
+    });
+
+    it('should create celebration particles at milestones', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'PLAYING';
+      game.bird.x = 100;
+      game.score = 9;
+      const initialParticleCount = game.particleSystem.particles.length;
+
+      game.pipes = [{
+        x: 20,
+        width: 60,
+        topHeight: 200,
+        bottomY: 400,
+        passed: false,
+        update: vi.fn()
+      }];
+
+      game.update(1);
+
+      // Should create celebration particles (20) plus sparkle particles (8)
+      expect(game.particleSystem.particles.length).toBeGreaterThan(initialParticleCount + 19);
     });
   });
 
