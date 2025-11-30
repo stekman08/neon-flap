@@ -15,7 +15,10 @@ export class AIController {
         }
 
         if (!nextPipe) {
-            if (bird.y >= canvas.height / 2 && bird.velocity >= 0) {
+            // No pipes yet - keep bird near center, but be more aggressive
+            // to avoid hitting the floor before first pipe spawns
+            const safeZone = canvas.height * 0.6; // Jump if below 60% of screen
+            if (bird.y >= safeZone || (bird.y >= canvas.height / 2 && bird.velocity >= 0)) {
                 bird.jump();
             }
             return;
