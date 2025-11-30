@@ -33,12 +33,12 @@ export class CitySkyline {
         // Generate window grid for this building (accounting for roof style)
         const windows = this.generateWindows(width, height, isBack, roofStyle);
 
-        // Tall buildings (>60% of screen) get aircraft warning lights
-        const hasWarningLight = !isBack && height > this.canvas.height * 0.4 && Math.random() < 0.7;
-        const warningLightPhase = Math.random() * Math.PI * 2;
+        // Some buildings have antennas (but not spire buildings - they already have a pointed top)
+        const hasAntenna = !isBack && roofStyle !== 3 && Math.random() < 0.3;
 
-        // Some buildings have antennas
-        const hasAntenna = !isBack && Math.random() < 0.3;
+        // Only very tall buildings with spires get warning lights (and not if they have antennas)
+        const hasWarningLight = !isBack && !hasAntenna && roofStyle === 3 && height > this.canvas.height * 0.55;
+        const warningLightPhase = Math.random() * Math.PI * 2;
         const antennaHeight = GameConfig.scaleHeight(15 + Math.random() * 20);
 
         layer.push({
