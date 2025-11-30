@@ -39,6 +39,8 @@ describe('Star', () => {
   describe('update', () => {
     it('should move left based on pipe speed and parallax factor', () => {
       const star = new Star(canvas, ctx);
+      // Set a known starting position to avoid wrap-around flakiness
+      star.x = 200;
       const initialX = star.x;
       const pipeSpeed = 5;
 
