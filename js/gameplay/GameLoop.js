@@ -7,6 +7,7 @@ import { SynthGrid } from '../background/SynthGrid.js';
 import { ScorePopup } from '../scoring/ScorePopup.js';
 import { MatrixColumn } from '../background/MatrixColumn.js';
 import { AIController } from '../ai/AIController.js';
+import { aiDebugLog } from '../ai/AIDebugLog.js';
 import { GameConfig } from '../config/GameConfig.js';
 import { PerformanceMonitor } from '../debug/PerformanceMonitor.js';
 import {
@@ -40,6 +41,10 @@ export class GameLoop {
         this.lastTimestamp = 0;
         this.timeSinceLastPipe = 0;
         this.shake = 0; // Screen shake magnitude
+        this.gameOverTime = 0; // Timestamp when game over occurred (for restart cooldown)
+        this.screenFlash = 0; // Screen flash intensity for milestone celebrations
+        this.deathFlash = 0; // Red flash on death
+        this.deathHueShift = 0; // Temporary hue shift towards red on death
 
         // Arrays
         this.bird = null;
@@ -53,6 +58,9 @@ export class GameLoop {
 
         // Performance monitoring (debug mode only)
         this.performanceMonitor = new PerformanceMonitor();
+
+        // AI Debug logging (for test diagnostics)
+        this.aiDebugLog = aiDebugLog;
 
         // Bind methods
         this.loop = this.loop.bind(this);
@@ -80,7 +88,8 @@ export class GameLoop {
         this.lastTimestamp = 0;
         this.timeSinceLastPipe = 0;
         this.shake = 0;
-        this.uiElements.scoreHud.innerText = this.score;
+        const scoreNumber = this.uiElements.scoreHud.querySelector('.score-number');
+        if (scoreNumber) scoreNumber.innerText = this.score;
         this.uiElements.scoreHud.style.display = 'none'; // Ensure hidden on init
 
         // Reset difficulty
@@ -113,10 +122,26 @@ export class GameLoop {
 
     start() {
         if (this.gameState === 'START' || this.gameState === 'GAMEOVER') {
+            // Prevent immediate restart after game over (750ms cooldown)
+            if (this.gameState === 'GAMEOVER') {
+                const timeSinceGameOver = Date.now() - this.gameOverTime;
+                if (timeSinceGameOver < 750) {
+                    return; // Too soon, ignore input
+                }
+                this.init();
+            }
+
             this.gameState = 'PLAYING';
             this.uiElements.startScreen.classList.remove('active');
             this.uiElements.gameOverScreen.classList.remove('active');
             this.uiElements.scoreHud.style.display = 'flex'; // Show score
+
+            // Enable AI debug logging for auto-play mode
+            if (this.isAutoPlay) {
+                aiDebugLog.enable();
+                aiDebugLog.logGameStart(this.bird);
+            }
+
             this.bird.jump();
 
             // Ensure loop is running
@@ -133,17 +158,34 @@ export class GameLoop {
     }
 
     gameOver() {
+        // Prevent multiple gameOver calls
+        if (this.gameState === 'GAMEOVER') return;
+
         this.gameState = 'GAMEOVER';
+        this.gameOverTime = Date.now(); // Track when game over occurred for restart cooldown
+
+        // Log game over - check if it's floor collision (bird at bottom)
+        const isFloorCollision = this.bird.y + this.bird.height >= this.canvas.height;
+        if (isFloorCollision) {
+            aiDebugLog.logCollision('floor', this.bird);
+        }
+        aiDebugLog.logGameOver(this.score, aiDebugLog.summary?.gameOverReason || (isFloorCollision ? 'floor' : 'unknown'));
+
         this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2);
         if (this.audioController) this.audioController.playCrash();
-        this.shake = 20;
+        this.shake = 25; // Stronger shake
+        this.deathFlash = 0.8; // Bright red flash
+        this.deathHueShift = 1.0; // Full shift towards red
 
         // Haptic feedback (heavy)
         if (navigator.vibrate) {
             navigator.vibrate(200);
         }
 
-        this.uiElements.gameOverScreen.classList.add('active');
+        // Delay showing game over screen for dramatic effect
+        setTimeout(() => {
+            this.uiElements.gameOverScreen.classList.add('active');
+        }, 300);
 
         if (!this.isAutoPlay && this.score > this.highScore) {
             this.highScore = this.score;
@@ -209,10 +251,18 @@ export class GameLoop {
         // Smooth interpolation towards target hue with breathing oscillation
         const time = Date.now() * 0.001;
         const oscillation = Math.sin(time) * 20; // +/- 20 degrees breathing
-        const currentBaseHue = targetHue + oscillation;
+        let currentBaseHue = targetHue + oscillation;
+
+        // Death hue shift - push towards red/magenta (0/360 degrees)
+        if (this.deathHueShift > 0) {
+            currentBaseHue = currentBaseHue + (360 - currentBaseHue) * this.deathHueShift * 0.5;
+            this.deathHueShift *= 0.95; // Decay
+            if (this.deathHueShift < 0.01) this.deathHueShift = 0;
+        }
+
         this.gameHue = this.gameHue + (currentBaseHue - this.gameHue) * 0.05;
 
-        this.stars.forEach(star => star.update(deltaTime));
+        this.stars.forEach(star => star.update(this.currentPipeSpeed, deltaTime));
         this.city.update(this.currentPipeSpeed, this.gameHue, deltaTime);
         this.synthGrid.update(this.currentPipeSpeed, this.gameHue, deltaTime);
         this.matrixRain.forEach(col => col.update(this.gameHue, deltaTime));
@@ -220,8 +270,12 @@ export class GameLoop {
         if (this.gameState === 'PLAYING') {
             if (this.isAutoPlay) {
                 AIController.performAI(this.bird, this.pipes, this.currentPipeGap, this.canvas);
+                aiDebugLog.logFrame(this.bird, this.pipes, this.performanceMonitor.fps);
             }
-            this.bird.update(this.gameHue, deltaTime);
+            this.bird.update(this.gameHue, deltaTime, this.currentPipeSpeed);
+
+            // Floor collision in Bird.update() may have triggered game over
+            if (this.gameState !== 'PLAYING') return;
 
             // Pipe Spawning - time-based instead of frame-based
             // Convert PIPE_SPAWN_RATE from frames to milliseconds (assuming 60fps base)
@@ -232,9 +286,11 @@ export class GameLoop {
             this.timeSinceLastPipe += (16.67 * deltaTime); // Add elapsed time
 
             if (this.timeSinceLastPipe >= currentSpawnInterval) {
-                this.pipes.push(new Pipe(this.canvas, this.ctx, this.currentPipeGap, GameConfig.minPipeGap, this.lastPipeGapCenter, this.gameHue, (center) => {
+                const newPipe = new Pipe(this.canvas, this.ctx, this.currentPipeGap, GameConfig.minPipeGap, this.lastPipeGapCenter, this.gameHue, (center) => {
                     this.lastPipeGapCenter = center;
-                }));
+                });
+                this.pipes.push(newPipe);
+                aiDebugLog.logPipeSpawn(newPipe);
                 this.timeSinceLastPipe = 0;
             }
 
@@ -245,17 +301,22 @@ export class GameLoop {
 
                 // Collision Detection
                 if (
+                    this.gameState === 'PLAYING' &&
                     this.bird.x < p.x + p.width &&
                     this.bird.x + this.bird.width > p.x &&
                     (this.bird.y < p.topHeight || this.bird.y + this.bird.height > p.bottomY)
                 ) {
+                    const collisionType = this.bird.y < p.topHeight ? 'pipe_top' : 'pipe_bottom';
+                    aiDebugLog.logCollision(collisionType, this.bird, p);
                     this.gameOver();
+                    return;
                 }
 
                 // Score
                 if (p.x + p.width < this.bird.x && !p.passed) {
                     p.passed = true;
                     this.pipesPassed++;
+                    aiDebugLog.logPipePassed(p, this.score + 1);
 
                     // Check for perfect pass
                     const gapCenter = p.topHeight + (this.currentPipeGap / 2);
@@ -273,10 +334,32 @@ export class GameLoop {
                     } else {
                         this.score++;
                         this.scorePopups.push(new ScorePopup(this.bird.x, this.bird.y - 20, "+1", this.ctx));
+                        this.particleSystem.createPipeClearedEffect(this.bird.x, this.bird.y + this.bird.height / 2, this.gameHue);
                         if (this.audioController) this.audioController.playScore();
                     }
 
-                    this.uiElements.scoreHud.innerText = this.score;
+                    const scoreEl = this.uiElements.scoreHud.querySelector('.score-number');
+                    if (scoreEl) scoreEl.innerText = this.score;
+
+                    // Milestone celebrations at 10, 25, 50, 100
+                    const milestones = [10, 25, 50, 100];
+                    if (milestones.includes(this.score)) {
+                        this.screenFlash = 0.4; // Trigger screen flash
+                        // Create celebration particles around the bird
+                        for (let i = 0; i < 20; i++) {
+                            const angle = (i / 20) * Math.PI * 2;
+                            const distance = 30 + Math.random() * 20;
+                            this.particleSystem.particles.push({
+                                x: this.bird.x + this.bird.width / 2 + Math.cos(angle) * distance,
+                                y: this.bird.y + this.bird.height / 2 + Math.sin(angle) * distance,
+                                vx: Math.cos(angle) * 2,
+                                vy: Math.sin(angle) * 2,
+                                life: 1.0,
+                                color: `hsl(${this.gameHue + i * 18}, 100%, 60%)`,
+                                size: 3 + Math.random() * 2
+                            });
+                        }
+                    }
 
                     // Difficulty Scaling
                     if (this.pipesPassed % 3 === 0) {
@@ -351,6 +434,22 @@ export class GameLoop {
 
         // Draw Score Popups
         this.scorePopups.forEach(p => p.draw(this.ctx));
+
+        // Draw screen flash for milestones
+        if (this.screenFlash > 0) {
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${this.screenFlash})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.screenFlash -= 0.02; // Fade out
+            if (this.screenFlash < 0) this.screenFlash = 0;
+        }
+
+        // Death flash - dramatic red/magenta overlay
+        if (this.deathFlash > 0) {
+            this.ctx.fillStyle = `rgba(255, 50, 100, ${this.deathFlash})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.deathFlash *= 0.85; // Fast decay
+            if (this.deathFlash < 0.01) this.deathFlash = 0;
+        }
 
         this.performanceMonitor.markDrawEnd();
         this.ctx.restore(); // Restore shake translation

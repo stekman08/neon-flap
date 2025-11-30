@@ -31,24 +31,37 @@
     <link rel="manifest" href="manifest.json">
 
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
     <div class="game-container">
+        <div class="atmosphere-layer"></div>
         <div class="background-grid"></div>
         <div class="background-horizon"></div>
+        <div class="ambient-glow glow-1"></div>
+        <div class="ambient-glow glow-2"></div>
         <canvas id="gameCanvas"></canvas>
         <div id="ui-layer">
             <div id="start-screen" class="screen active">
-                <h1 class="glitch" data-text="NEON FLAP">NEON FLAP</h1>
-                <p>Press SPACE or TAP to Jump</p>
+                <div class="title-block">
+                    <span class="title-accent">/// ARCADE</span>
+                    <h1 class="glitch" data-text="NEON FLAP">NEON FLAP</h1>
+                    <p class="tagline">Navigate the neon void</p>
+                </div>
                 <div class="button-group">
-                    <button id="start-btn" class="btn-neon btn-primary">START GAME</button>
-                    <button id="ai-btn" class="btn-neon btn-secondary">WATCH AI</button>
+                    <button id="start-btn" class="btn-neon btn-primary">
+                        <span class="btn-glow"></span>
+                        <span class="btn-text">START GAME</span>
+                    </button>
+                    <button id="ai-btn" class="btn-neon btn-secondary">
+                        <span class="btn-glow"></span>
+                        <span class="btn-text">WATCH AI</span>
+                    </button>
                     <button id="install-btn" class="btn-neon btn-accent install-btn" style="display: none;">
-                        <span class="install-icon">📥</span>
-                        INSTALL APP
+                        <span class="btn-glow"></span>
+                        <span class="install-icon">⬇</span>
+                        <span class="btn-text">INSTALL APP</span>
                     </button>
                 </div>
                 <div class="controls-row">
@@ -70,41 +83,64 @@
                     </button>
                     <button id="turtle-mode-btn" class="icon-btn" aria-label="Toggle Turtle Mode" title="Turtle Mode (Slow)">
                         <svg viewBox="0 0 24 24" class="neon-icon">
-                            <!-- Turtle Shell -->
                             <path d="M7 13a5 5 0 0 1 10 0" fill="none" stroke="currentColor" stroke-width="2" />
                             <path d="M7 13h10" stroke="currentColor" stroke-width="2" />
-                            <!-- Head -->
                             <circle cx="19" cy="13" r="2" fill="none" stroke="currentColor" stroke-width="2" />
-                            <!-- Legs -->
                             <path d="M8 13v3 M16 13v3" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                            <!-- Tail -->
                             <path d="M5 13l-2 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </button>
                 </div>
+                <div class="input-hint">
+                    <kbd>SPACE</kbd> or <kbd>TAP</kbd> to jump
+                </div>
                 <div id="version-info" class="version-info"></div>
             </div>
             <div id="game-over-screen" class="screen">
-                <h2 id="turtle-mode-indicator">TURTLE MODE</h2>
-                <h1 class="glitch" data-text="GAME OVER">GAME OVER</h1>
-                <p>Score: <span id="final-score">0</span></p>
-                <p>Best: <span id="best-score">0</span></p>
-                <button id="restart-btn" class="btn-neon btn-primary">TRY AGAIN</button>
+                <div class="game-over-content">
+                    <h2 id="turtle-mode-indicator">TURTLE MODE</h2>
+                    <h1 class="glitch" data-text="GAME OVER">GAME OVER</h1>
+                    <div class="score-panel">
+                        <div class="score-row">
+                            <span class="score-label">SCORE</span>
+                            <span class="score-value" id="final-score">0</span>
+                        </div>
+                        <div class="score-divider"></div>
+                        <div class="score-row best">
+                            <span class="score-label">BEST</span>
+                            <span class="score-value" id="best-score">0</span>
+                        </div>
+                    </div>
+                    <button id="restart-btn" class="btn-neon btn-primary">
+                        <span class="btn-glow"></span>
+                        <span class="btn-text">TRY AGAIN</span>
+                    </button>
+                </div>
             </div>
             <div class="score-container">
-                <div id="score-hud">0</div>
+                <div id="score-hud">
+                    <span class="score-prefix">SCORE</span>
+                    <span class="score-number">0</span>
+                </div>
             </div>
             <div id="music-osd" class="music-osd"></div>
         </div>
     </div>
 
     <div id="orientation-warning">
-        <div class="icon">📱</div>
+        <div class="rotate-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="2" width="14" height="20" rx="2" />
+                <path d="M12 18h.01" />
+            </svg>
+        </div>
         <p>Please Rotate Device</p>
     </div>
 
-    <!-- CRT Overlay -->
-    <div class="crt-overlay"></div>
+    <!-- Scanline Overlay -->
+    <div class="scanlines"></div>
+    <!-- Vignette -->
+    <div class="vignette"></div>
 
     <script type="module" src="js/main.js"></script>
 

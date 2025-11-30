@@ -7,11 +7,12 @@ export class Star {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
         this.size = Math.random() * GameConfig.scaleWidth(2); // 0.5% of width
-        this.speed = Math.random() * GameConfig.scaleWidth(0.5) + GameConfig.scaleWidth(0.1); // 0.025%-0.15% of width
+        // Parallax factor: smaller = further away, slower movement
+        this.parallaxFactor = 0.05 + Math.random() * 0.1; // 0.05-0.15x pipe speed
     }
 
-    update(deltaTime = 1) {
-        this.x -= this.speed * deltaTime;
+    update(pipeSpeed, deltaTime = 1) {
+        this.x -= pipeSpeed * this.parallaxFactor * deltaTime;
         if (this.x < 0) {
             this.x = this.canvas.width;
             this.y = Math.random() * this.canvas.height;
