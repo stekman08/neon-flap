@@ -318,6 +318,7 @@ export class GameLoop {
                     } else {
                         this.score++;
                         this.scorePopups.push(new ScorePopup(this.bird.x, this.bird.y - 20, "+1", this.ctx));
+                        this.particleSystem.createPipeClearedEffect(this.bird.x, this.bird.y + this.bird.height / 2, this.gameHue);
                         if (this.audioController) this.audioController.playScore();
                     }
 

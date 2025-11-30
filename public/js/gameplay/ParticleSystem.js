@@ -36,6 +36,25 @@ export class ParticleSystem {
         }
     }
 
+    // Create sparkle effect when passing a pipe
+    createPipeClearedEffect(x, y, hue) {
+        const particleCount = 8;
+        for (let i = 0; i < particleCount; i++) {
+            // Spread particles in a small burst behind the bird
+            const angle = (Math.random() - 0.5) * Math.PI * 0.5; // Mostly backward
+            const speed = Math.random() * 3 + 1;
+            this.particles.push({
+                x: x,
+                y: y + (Math.random() - 0.5) * 20,
+                vx: -Math.abs(Math.cos(angle) * speed) - 1, // Always move left/backward
+                vy: Math.sin(angle) * speed,
+                life: 0.8,
+                color: `hsl(${hue}, 100%, 70%)`,
+                size: Math.random() * 2 + 1
+            });
+        }
+    }
+
     update(deltaTime = 1) {
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
