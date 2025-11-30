@@ -50,12 +50,18 @@ describe('GameLoop', () => {
         addColorStop: vi.fn()
       }))
     };
+    const scoreNumberEl = { innerText: '' };
     uiElements = {
       startScreen: { classList: { add: vi.fn(), remove: vi.fn() } },
       gameOverScreen: { classList: { add: vi.fn(), remove: vi.fn() } },
-      scoreHud: { innerText: '', style: { display: '' } },
+      scoreHud: {
+        innerText: '',
+        style: { display: '' },
+        querySelector: vi.fn(() => scoreNumberEl)
+      },
       finalScoreEl: { innerText: '' },
-      bestScoreEl: { innerText: '' }
+      bestScoreEl: { innerText: '' },
+      scoreNumberEl // expose for assertions
     };
 
     global.localStorage = {
@@ -608,6 +614,45 @@ describe('GameLoop', () => {
 
       // State should not change
       expect(game.gameState).toBe(initialState);
+    });
+
+    it('should not restart within 750ms cooldown after game over', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'GAMEOVER';
+      game.gameOverTime = Date.now(); // Just happened
+
+      game.start();
+
+      // Should still be GAMEOVER (cooldown blocked restart)
+      expect(game.gameState).toBe('GAMEOVER');
+    });
+
+    it('should allow restart after 750ms cooldown', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'GAMEOVER';
+      game.gameOverTime = Date.now() - 800; // 800ms ago (past cooldown)
+
+      game.start();
+
+      // Should now be PLAYING
+      expect(game.gameState).toBe('PLAYING');
+    });
+
+    it('should reset game state when starting from GAMEOVER', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'GAMEOVER';
+      game.gameOverTime = Date.now() - 800; // Past cooldown
+      game.score = 10;
+      game.pipes = [{ x: 100 }]; // Some pipes
+
+      game.start();
+
+      // Score and pipes should be reset
+      expect(game.score).toBe(0);
+      expect(game.pipes).toEqual([]);
     });
   });
 

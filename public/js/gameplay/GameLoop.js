@@ -40,6 +40,7 @@ export class GameLoop {
         this.lastTimestamp = 0;
         this.timeSinceLastPipe = 0;
         this.shake = 0; // Screen shake magnitude
+        this.gameOverTime = 0; // Timestamp when game over occurred (for restart cooldown)
 
         // Arrays
         this.bird = null;
@@ -80,7 +81,8 @@ export class GameLoop {
         this.lastTimestamp = 0;
         this.timeSinceLastPipe = 0;
         this.shake = 0;
-        this.uiElements.scoreHud.innerText = this.score;
+        const scoreNumber = this.uiElements.scoreHud.querySelector('.score-number');
+        if (scoreNumber) scoreNumber.innerText = this.score;
         this.uiElements.scoreHud.style.display = 'none'; // Ensure hidden on init
 
         // Reset difficulty
@@ -113,6 +115,15 @@ export class GameLoop {
 
     start() {
         if (this.gameState === 'START' || this.gameState === 'GAMEOVER') {
+            // Prevent immediate restart after game over (750ms cooldown)
+            if (this.gameState === 'GAMEOVER') {
+                const timeSinceGameOver = Date.now() - this.gameOverTime;
+                if (timeSinceGameOver < 750) {
+                    return; // Too soon, ignore input
+                }
+                this.init();
+            }
+
             this.gameState = 'PLAYING';
             this.uiElements.startScreen.classList.remove('active');
             this.uiElements.gameOverScreen.classList.remove('active');
@@ -134,6 +145,7 @@ export class GameLoop {
 
     gameOver() {
         this.gameState = 'GAMEOVER';
+        this.gameOverTime = Date.now(); // Track when game over occurred for restart cooldown
         this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2);
         if (this.audioController) this.audioController.playCrash();
         this.shake = 20;
@@ -281,7 +293,8 @@ export class GameLoop {
                         if (this.audioController) this.audioController.playScore();
                     }
 
-                    this.uiElements.scoreHud.innerText = this.score;
+                    const scoreEl = this.uiElements.scoreHud.querySelector('.score-number');
+                    if (scoreEl) scoreEl.innerText = this.score;
 
                     // Difficulty Scaling
                     if (this.pipesPassed % 3 === 0) {
