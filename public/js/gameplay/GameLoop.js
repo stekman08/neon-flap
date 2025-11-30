@@ -7,6 +7,7 @@ import { SynthGrid } from '../background/SynthGrid.js';
 import { ScorePopup } from '../scoring/ScorePopup.js';
 import { MatrixColumn } from '../background/MatrixColumn.js';
 import { AIController } from '../ai/AIController.js';
+import { aiDebugLog } from '../ai/AIDebugLog.js';
 import { GameConfig } from '../config/GameConfig.js';
 import { PerformanceMonitor } from '../debug/PerformanceMonitor.js';
 import {
@@ -54,6 +55,9 @@ export class GameLoop {
 
         // Performance monitoring (debug mode only)
         this.performanceMonitor = new PerformanceMonitor();
+
+        // AI Debug logging (for test diagnostics)
+        this.aiDebugLog = aiDebugLog;
 
         // Bind methods
         this.loop = this.loop.bind(this);
@@ -128,6 +132,13 @@ export class GameLoop {
             this.uiElements.startScreen.classList.remove('active');
             this.uiElements.gameOverScreen.classList.remove('active');
             this.uiElements.scoreHud.style.display = 'flex'; // Show score
+
+            // Enable AI debug logging for auto-play mode
+            if (this.isAutoPlay) {
+                aiDebugLog.enable();
+                aiDebugLog.logGameStart(this.bird);
+            }
+
             this.bird.jump();
 
             // Ensure loop is running
@@ -144,8 +155,19 @@ export class GameLoop {
     }
 
     gameOver() {
+        // Prevent multiple gameOver calls
+        if (this.gameState === 'GAMEOVER') return;
+
         this.gameState = 'GAMEOVER';
         this.gameOverTime = Date.now(); // Track when game over occurred for restart cooldown
+
+        // Log game over - check if it's floor collision (bird at bottom)
+        const isFloorCollision = this.bird.y + this.bird.height >= this.canvas.height;
+        if (isFloorCollision) {
+            aiDebugLog.logCollision('floor', this.bird);
+        }
+        aiDebugLog.logGameOver(this.score, aiDebugLog.summary?.gameOverReason || (isFloorCollision ? 'floor' : 'unknown'));
+
         this.particleSystem.createExplosion(this.bird.x + this.bird.width / 2, this.bird.y + this.bird.height / 2);
         if (this.audioController) this.audioController.playCrash();
         this.shake = 20;
@@ -232,6 +254,7 @@ export class GameLoop {
         if (this.gameState === 'PLAYING') {
             if (this.isAutoPlay) {
                 AIController.performAI(this.bird, this.pipes, this.currentPipeGap, this.canvas);
+                aiDebugLog.logFrame(this.bird, this.pipes, this.performanceMonitor.fps);
             }
             this.bird.update(this.gameHue, deltaTime, this.currentPipeSpeed);
 
@@ -247,9 +270,11 @@ export class GameLoop {
             this.timeSinceLastPipe += (16.67 * deltaTime); // Add elapsed time
 
             if (this.timeSinceLastPipe >= currentSpawnInterval) {
-                this.pipes.push(new Pipe(this.canvas, this.ctx, this.currentPipeGap, GameConfig.minPipeGap, this.lastPipeGapCenter, this.gameHue, (center) => {
+                const newPipe = new Pipe(this.canvas, this.ctx, this.currentPipeGap, GameConfig.minPipeGap, this.lastPipeGapCenter, this.gameHue, (center) => {
                     this.lastPipeGapCenter = center;
-                }));
+                });
+                this.pipes.push(newPipe);
+                aiDebugLog.logPipeSpawn(newPipe);
                 this.timeSinceLastPipe = 0;
             }
 
@@ -265,6 +290,8 @@ export class GameLoop {
                     this.bird.x + this.bird.width > p.x &&
                     (this.bird.y < p.topHeight || this.bird.y + this.bird.height > p.bottomY)
                 ) {
+                    const collisionType = this.bird.y < p.topHeight ? 'pipe_top' : 'pipe_bottom';
+                    aiDebugLog.logCollision(collisionType, this.bird, p);
                     this.gameOver();
                     return;
                 }
@@ -273,6 +300,7 @@ export class GameLoop {
                 if (p.x + p.width < this.bird.x && !p.passed) {
                     p.passed = true;
                     this.pipesPassed++;
+                    aiDebugLog.logPipePassed(p, this.score + 1);
 
                     // Check for perfect pass
                     const gapCenter = p.topHeight + (this.currentPipeGap / 2);
