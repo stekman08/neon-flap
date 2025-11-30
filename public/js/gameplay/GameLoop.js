@@ -42,6 +42,7 @@ export class GameLoop {
         this.timeSinceLastPipe = 0;
         this.shake = 0; // Screen shake magnitude
         this.gameOverTime = 0; // Timestamp when game over occurred (for restart cooldown)
+        this.screenFlash = 0; // Screen flash intensity for milestone celebrations
 
         // Arrays
         this.bird = null;
@@ -325,6 +326,26 @@ export class GameLoop {
                     const scoreEl = this.uiElements.scoreHud.querySelector('.score-number');
                     if (scoreEl) scoreEl.innerText = this.score;
 
+                    // Milestone celebrations at 10, 25, 50, 100
+                    const milestones = [10, 25, 50, 100];
+                    if (milestones.includes(this.score)) {
+                        this.screenFlash = 0.4; // Trigger screen flash
+                        // Create celebration particles around the bird
+                        for (let i = 0; i < 20; i++) {
+                            const angle = (i / 20) * Math.PI * 2;
+                            const distance = 30 + Math.random() * 20;
+                            this.particleSystem.particles.push({
+                                x: this.bird.x + this.bird.width / 2 + Math.cos(angle) * distance,
+                                y: this.bird.y + this.bird.height / 2 + Math.sin(angle) * distance,
+                                vx: Math.cos(angle) * 2,
+                                vy: Math.sin(angle) * 2,
+                                life: 1.0,
+                                color: `hsl(${this.gameHue + i * 18}, 100%, 60%)`,
+                                size: 3 + Math.random() * 2
+                            });
+                        }
+                    }
+
                     // Difficulty Scaling
                     if (this.pipesPassed % 3 === 0) {
                         const increment = GameConfig.isTurtleMode ? (SPEED_INCREMENT / 2) : SPEED_INCREMENT;
@@ -398,6 +419,14 @@ export class GameLoop {
 
         // Draw Score Popups
         this.scorePopups.forEach(p => p.draw(this.ctx));
+
+        // Draw screen flash for milestones
+        if (this.screenFlash > 0) {
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${this.screenFlash})`;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.screenFlash -= 0.02; // Fade out
+            if (this.screenFlash < 0) this.screenFlash = 0;
+        }
 
         this.performanceMonitor.markDrawEnd();
         this.ctx.restore(); // Restore shake translation
