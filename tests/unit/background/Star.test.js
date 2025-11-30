@@ -28,19 +28,21 @@ describe('Star', () => {
       expect(star.size).toBeLessThanOrEqual(3);
     });
 
-    it('should have random speed', () => {
+    it('should have random parallax factor', () => {
       const star = new Star(canvas, ctx);
 
-      expect(star.speed).toBeGreaterThan(0);
+      expect(star.parallaxFactor).toBeGreaterThanOrEqual(0.05);
+      expect(star.parallaxFactor).toBeLessThanOrEqual(0.15);
     });
   });
 
   describe('update', () => {
-    it('should move left', () => {
+    it('should move left based on pipe speed and parallax factor', () => {
       const star = new Star(canvas, ctx);
       const initialX = star.x;
+      const pipeSpeed = 5;
 
-      star.update();
+      star.update(pipeSpeed);
 
       expect(star.x).toBeLessThan(initialX);
     });
@@ -48,8 +50,9 @@ describe('Star', () => {
     it('should wrap around when reaching left edge', () => {
       const star = new Star(canvas, ctx);
       star.x = -10; // Past left edge
+      const pipeSpeed = 5;
 
-      star.update();
+      star.update(pipeSpeed);
 
       expect(star.x).toBeGreaterThan(0);
     });

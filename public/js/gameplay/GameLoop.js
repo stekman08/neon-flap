@@ -247,7 +247,7 @@ export class GameLoop {
         const currentBaseHue = targetHue + oscillation;
         this.gameHue = this.gameHue + (currentBaseHue - this.gameHue) * 0.05;
 
-        this.stars.forEach(star => star.update(deltaTime));
+        this.stars.forEach(star => star.update(this.currentPipeSpeed, deltaTime));
         this.city.update(this.currentPipeSpeed, this.gameHue, deltaTime);
         this.synthGrid.update(this.currentPipeSpeed, this.gameHue, deltaTime);
         this.matrixRain.forEach(col => col.update(this.gameHue, deltaTime));
