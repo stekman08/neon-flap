@@ -244,7 +244,63 @@ aiBtn.addEventListener('click', async (e) => {
     game.start();
 });
 
+// Train AI Button - Neuroevolution mode
+const trainBtn = document.getElementById('train-btn');
+if (trainBtn) {
+    // Update button text if trained brain exists
+    updateTrainButtonText();
+
+    trainBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await ensureAudioReady();
+        game.startTraining();
+    });
+}
+
+// Update Train AI button to show best score
+function updateTrainButtonText() {
+    if (!trainBtn) return;
+    const btnText = trainBtn.querySelector('.btn-text');
+    if (!btnText) return;
+
+    try {
+        const data = localStorage.getItem('neonFlapTrainedBrain');
+        if (data) {
+            const parsed = JSON.parse(data);
+            if (parsed.score > 0) {
+                btnText.textContent = `TRAIN AI (BEST: ${parsed.score})`;
+                return;
+            }
+        }
+    } catch (e) {
+        // Ignore errors
+    }
+    btnText.textContent = 'TRAIN AI';
+}
+
+// Escape key to exit training/AI mode
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && (game.isTraining || game.isAutoPlay)) {
+        // Stop training/AI mode
+        const aiStats = document.getElementById('ai-stats');
+        if (aiStats) aiStats.classList.remove('active');
+        game.isTraining = false;
+        game.isAutoPlay = false;
+        game.init();
+        game.gameState = 'START';
+        uiElements.startScreen.classList.add('active');
+
+        // Update Train AI button text with new best score
+        updateTrainButtonText();
+    }
+});
+
 restartBtn.addEventListener('click', () => {
+    // Hide AI stats if training mode was active
+    const aiStats = document.getElementById('ai-stats');
+    if (aiStats) aiStats.classList.remove('active');
+    game.isTraining = false;
+
     game.init();
     game.gameState = 'START';
     uiElements.gameOverScreen.classList.remove('active');

@@ -7,6 +7,8 @@ import { SynthGrid } from '../background/SynthGrid.js';
 import { ScorePopup } from '../scoring/ScorePopup.js';
 import { MatrixColumn } from '../background/MatrixColumn.js';
 import { AIController } from '../ai/AIController.js';
+import { TrainingBird } from '../ai/TrainingBird.js';
+import { NeuralNetwork } from '../ai/NeuralNetwork.js';
 import { aiDebugLog } from '../ai/AIDebugLog.js';
 import { GameConfig } from '../config/GameConfig.js';
 import { PerformanceMonitor } from '../debug/PerformanceMonitor.js';
@@ -61,6 +63,16 @@ export class GameLoop {
 
         // AI Debug logging (for test diagnostics)
         this.aiDebugLog = aiDebugLog;
+
+        // AI Training mode
+        this.isTraining = false;
+        this.population = [];
+        this.savedBirds = [];
+        this.generation = 1;
+        this.bestFitness = 0;
+        this.bestBrainScore = 0; // Best score achieved by any bird ever
+        this.POPULATION_SIZE = 50;
+        this.MUTATION_RATE = 0.1;
 
         // Bind methods
         this.loop = this.loop.bind(this);
@@ -226,6 +238,285 @@ export class GameLoop {
         }
     }
 
+    /**
+     * Start AI training mode with neuroevolution
+     */
+    startTraining() {
+        this.isTraining = true;
+        this.isAutoPlay = false;
+        this.gameState = 'PLAYING';
+        this.generation = 1;
+        this.bestFitness = 0;
+
+        // Load existing best brain score
+        const savedBrain = GameLoop.loadTrainedBrain();
+        this.bestBrainScore = savedBrain ? savedBrain.score : 0;
+        if (savedBrain) {
+            console.log(`[AI] Starting training. Best saved brain has score: ${savedBrain.score}`);
+        }
+
+        this.uiElements.startScreen.classList.remove('active');
+        this.uiElements.gameOverScreen.classList.remove('active');
+        this.uiElements.scoreHud.style.display = 'none'; // Hide score during training
+
+        // Show AI stats panel
+        const aiStats = document.getElementById('ai-stats');
+        if (aiStats) aiStats.classList.add('active');
+
+        // Reset game state
+        this.pipes = [];
+        this.score = 0;
+        this.pipesPassed = 0;
+        this.frames = 0;
+        this.timeSinceLastPipe = 0;
+        this.currentPipeSpeed = INITIAL_PIPE_SPEED;
+        this.currentPipeGap = GameConfig.initialPipeGap;
+
+        // Create initial population
+        this.createPopulation();
+        this.updateTrainingUI();
+
+        // Start game loop
+        if (!this.lastTimestamp) {
+            this.lastTimestamp = performance.now();
+            this.loop(this.lastTimestamp);
+        }
+    }
+
+    /**
+     * Create initial population of training birds
+     * If a trained brain exists, seed population with mutated copies of it
+     */
+    createPopulation() {
+        this.population = [];
+        this.savedBirds = [];
+
+        // Try to load saved brain to continue training
+        const savedData = GameLoop.loadTrainedBrain();
+        let baseBrain = null;
+
+        if (savedData) {
+            baseBrain = NeuralNetwork.fromJSON(savedData.brain);
+            console.log(`[AI] Seeding population from saved brain (score: ${savedData.score})`);
+        }
+
+        for (let i = 0; i < this.POPULATION_SIZE; i++) {
+            let bird;
+
+            if (baseBrain) {
+                // Create mutated copy of saved brain
+                const childBrain = baseBrain.copy();
+                // First bird gets no mutation (keep the original), rest get mutations
+                if (i > 0) {
+                    childBrain.mutate(this.MUTATION_RATE);
+                }
+                bird = new TrainingBird(this.canvas, childBrain);
+            } else {
+                // No saved brain - start with random
+                bird = new TrainingBird(this.canvas);
+            }
+
+            bird.jump(); // Initial jump like normal game
+            this.population.push(bird);
+        }
+    }
+
+    /**
+     * Create next generation using genetic algorithm
+     */
+    nextGeneration() {
+        // Calculate raw fitness for each bird
+        for (const bird of this.savedBirds) {
+            bird.calculateFitness();
+        }
+
+        // Track best fitness BEFORE normalizing
+        const maxFitness = Math.max(...this.savedBirds.map(b => b.fitness));
+        if (maxFitness > this.bestFitness) {
+            this.bestFitness = maxFitness;
+        }
+
+        // Now normalize for selection
+        this.normalizeFitness();
+        this.generation++;
+
+        // Create new population
+        this.population = [];
+        for (let i = 0; i < this.POPULATION_SIZE; i++) {
+            this.population.push(this.pickOne());
+        }
+        this.savedBirds = [];
+
+        // Reset game state for new generation
+        this.pipes = [];
+        this.score = 0;
+        this.pipesPassed = 0;
+        this.frames = 0;
+        this.timeSinceLastPipe = 0;
+        this.currentPipeSpeed = INITIAL_PIPE_SPEED;
+        this.currentPipeGap = GameConfig.initialPipeGap;
+
+        this.updateTrainingUI();
+    }
+
+    /**
+     * Select a parent bird using fitness-proportionate selection
+     */
+    pickOne() {
+        let index = 0;
+        let r = Math.random();
+
+        while (r > 0 && index < this.savedBirds.length) {
+            r -= this.savedBirds[index].fitness;
+            index++;
+        }
+        index = Math.max(0, index - 1);
+
+        const parent = this.savedBirds[index];
+        return parent.createChild(this.MUTATION_RATE);
+    }
+
+    /**
+     * Normalize fitness values to sum to 1 (for selection probability)
+     */
+    normalizeFitness() {
+        const totalFitness = this.savedBirds.reduce((sum, b) => sum + b.fitness, 0);
+        if (totalFitness > 0) {
+            for (const bird of this.savedBirds) {
+                bird.fitness /= totalFitness;
+            }
+        }
+    }
+
+    /**
+     * Update the training UI stats
+     */
+    updateTrainingUI() {
+        const genEl = document.getElementById('gen-count');
+        const aliveEl = document.getElementById('alive-count');
+        const bestEl = document.getElementById('best-fitness');
+
+        if (genEl) genEl.innerText = this.generation;
+        if (aliveEl) aliveEl.innerText = this.population.filter(b => b.alive).length;
+        if (bestEl) bestEl.innerText = Math.floor(this.bestFitness / 100);
+    }
+
+    /**
+     * Save the best performing brain to localStorage
+     * @param {TrainingBird} bird - The bird whose brain to save
+     */
+    saveBestBrain(bird) {
+        if (!bird || !bird.brain) return;
+
+        try {
+            const brainData = {
+                brain: bird.brain.toJSON(),
+                score: bird.score,
+                generation: this.generation,
+                savedAt: Date.now()
+            };
+            localStorage.setItem('neonFlapTrainedBrain', JSON.stringify(brainData));
+            console.log(`[AI] Saved brain with score ${bird.score} from generation ${this.generation}`);
+
+            // Reset AIController cache so it picks up the new brain
+            AIController.resetBrainCache();
+        } catch (e) {
+            console.warn('[AI] Failed to save brain:', e);
+        }
+    }
+
+    /**
+     * Check if a trained brain exists in localStorage
+     * @returns {boolean}
+     */
+    static hasTrainedBrain() {
+        try {
+            return localStorage.getItem('neonFlapTrainedBrain') !== null;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /**
+     * Load the trained brain from localStorage
+     * @returns {Object|null} - The brain data or null
+     */
+    static loadTrainedBrain() {
+        try {
+            const data = localStorage.getItem('neonFlapTrainedBrain');
+            if (data) {
+                return JSON.parse(data);
+            }
+        } catch (e) {
+            console.warn('[AI] Failed to load brain:', e);
+        }
+        return null;
+    }
+
+    /**
+     * Update all training birds
+     */
+    updateTrainingBirds(deltaTime) {
+        let aliveBirds = 0;
+
+        for (let i = this.population.length - 1; i >= 0; i--) {
+            const bird = this.population[i];
+
+            if (!bird.alive) continue;
+
+            // Let the neural network decide
+            bird.think(this.pipes);
+
+            // Update physics
+            bird.update(deltaTime, this.currentPipeSpeed);
+
+            // Check collision
+            if (bird.checkCollision(this.pipes)) {
+                // Bird died - move to saved birds
+                this.savedBirds.push(bird);
+            } else {
+                aliveBirds++;
+                // Reward for passing pipes and check for new best
+                for (const pipe of this.pipes) {
+                    if (pipe.x + pipe.width < bird.x && !pipe.passedByBird?.has(bird)) {
+                        // Track which birds have passed this pipe
+                        if (!pipe.passedByBird) pipe.passedByBird = new Set();
+                        pipe.passedByBird.add(bird);
+
+                        bird.score++;
+
+                        // Track global pipe passes for difficulty scaling (first bird to pass counts)
+                        if (!pipe.passed) {
+                            pipe.passed = true;
+                            this.pipesPassed++;
+
+                            // Difficulty Scaling - same as normal mode
+                            if (this.pipesPassed % 3 === 0) {
+                                const increment = GameConfig.isTurtleMode ? (SPEED_INCREMENT / 2) : SPEED_INCREMENT;
+                                this.currentPipeSpeed = Math.min(this.currentPipeSpeed + increment, MAX_SPEED);
+                            }
+                        }
+
+                        // Save brain if this bird beats the best score (min 3 pipes)
+                        if (bird.score > this.bestBrainScore && bird.score >= 3) {
+                            this.bestBrainScore = bird.score;
+                            this.saveBestBrain(bird);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update alive count in UI
+        const aliveEl = document.getElementById('alive-count');
+        if (aliveEl) aliveEl.innerText = aliveBirds;
+
+        // Check if all birds are dead
+        if (aliveBirds === 0) {
+            this.nextGeneration();
+        }
+    }
+
     update(deltaTime) {
         this.performanceMonitor.markUpdateStart();
 
@@ -268,11 +559,17 @@ export class GameLoop {
         this.matrixRain.forEach(col => col.update(this.gameHue, deltaTime));
 
         if (this.gameState === 'PLAYING') {
-            if (this.isAutoPlay) {
+            // Handle different game modes
+            if (this.isTraining) {
+                // Training mode: update all birds in population
+                this.updateTrainingBirds(deltaTime);
+            } else if (this.isAutoPlay) {
                 AIController.performAI(this.bird, this.pipes, this.currentPipeGap, this.canvas);
                 aiDebugLog.logFrame(this.bird, this.pipes, this.performanceMonitor.fps);
+                this.bird.update(this.gameHue, deltaTime, this.currentPipeSpeed);
+            } else {
+                this.bird.update(this.gameHue, deltaTime, this.currentPipeSpeed);
             }
-            this.bird.update(this.gameHue, deltaTime, this.currentPipeSpeed);
 
             // Floor collision in Bird.update() may have triggered game over
             if (this.gameState !== 'PLAYING') return;
@@ -299,8 +596,9 @@ export class GameLoop {
                 let p = this.pipes[i];
                 p.update(this.currentPipeSpeed, this.gameHue, deltaTime);
 
-                // Collision Detection
+                // Collision Detection (skip in training mode - handled separately)
                 if (
+                    !this.isTraining &&
                     this.gameState === 'PLAYING' &&
                     this.bird.x < p.x + p.width &&
                     this.bird.x + this.bird.width > p.x &&
@@ -312,8 +610,8 @@ export class GameLoop {
                     return;
                 }
 
-                // Score
-                if (p.x + p.width < this.bird.x && !p.passed) {
+                // Score (skip in training mode - handled separately)
+                if (!this.isTraining && p.x + p.width < this.bird.x && !p.passed) {
                     p.passed = true;
                     this.pipesPassed++;
                     aiDebugLog.logPipePassed(p, this.score + 1);
@@ -424,9 +722,28 @@ export class GameLoop {
         // Draw Pipes
         this.pipes.forEach(p => p.draw(this.ctx, this.gameHue, this.bird));
 
-        // Draw Bird (only if not game over, or draw explosion instead)
+        // Draw Bird(s) - only if not game over
         if (this.gameState !== 'GAMEOVER') {
-            this.bird.draw(this.ctx, this.gameHue);
+            if (this.isTraining) {
+                // Draw training population - find the best performing bird
+                let bestBird = null;
+                let bestScore = -1;
+                for (const bird of this.population) {
+                    if (bird.alive && bird.framesAlive > bestScore) {
+                        bestScore = bird.framesAlive;
+                        bestBird = bird;
+                    }
+                }
+
+                // Draw all alive birds, marking the best one
+                for (const bird of this.population) {
+                    if (bird.alive) {
+                        bird.draw(this.ctx, this.gameHue, bird === bestBird);
+                    }
+                }
+            } else {
+                this.bird.draw(this.ctx, this.gameHue);
+            }
         }
 
         // Draw Particles

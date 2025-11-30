@@ -58,6 +58,10 @@
                         <span class="btn-glow"></span>
                         <span class="btn-text">WATCH AI</span>
                     </button>
+                    <button id="train-btn" class="btn-neon btn-train">
+                        <span class="btn-glow"></span>
+                        <span class="btn-text">TRAIN AI</span>
+                    </button>
                     <button id="install-btn" class="btn-neon btn-accent install-btn" style="display: none;">
                         <span class="btn-glow"></span>
                         <span class="install-icon">⬇</span>
@@ -121,6 +125,21 @@
                 <div id="score-hud">
                     <span class="score-prefix">SCORE</span>
                     <span class="score-number">0</span>
+                </div>
+            </div>
+            <div id="ai-stats" class="ai-stats">
+                <div class="ai-stats-header">NEUROEVOLUTION</div>
+                <div class="ai-stats-row">
+                    <span class="ai-stats-label">GEN</span>
+                    <span class="ai-stats-value" id="gen-count">1</span>
+                </div>
+                <div class="ai-stats-row">
+                    <span class="ai-stats-label">ALIVE</span>
+                    <span class="ai-stats-value" id="alive-count">0</span>
+                </div>
+                <div class="ai-stats-row">
+                    <span class="ai-stats-label">BEST</span>
+                    <span class="ai-stats-value" id="best-fitness">0</span>
                 </div>
             </div>
             <div id="music-osd" class="music-osd"></div>
