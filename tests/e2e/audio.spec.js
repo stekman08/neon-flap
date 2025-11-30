@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/coverage.js';
 
 test.describe('Audio System', () => {
   test('should have music button available', async ({ page }) => {

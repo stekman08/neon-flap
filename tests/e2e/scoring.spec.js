@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/coverage.js';
 
 test.describe('Scoring System', () => {
   test('should save and load high score', async ({ page }) => {

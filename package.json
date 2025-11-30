@@ -11,6 +11,9 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:coverage": "vitest run --coverage",
+    "test:coverage:all": "npm run test:coverage && npm run test:e2e && npm run coverage:merge && npm run coverage:report",
+    "coverage:merge": "node scripts/merge-coverage.js",
+    "coverage:report": "npx nyc report --reporter=text --reporter=html --temp-dir=coverage/merged",
     "test:ui": "vitest --ui",
     "prepare": "husky"
   },
@@ -25,6 +28,8 @@
     "canvas": "^3.2.0",
     "happy-dom": "^20.0.10",
     "husky": "^9.1.7",
+    "nyc": "^17.1.0",
+    "v8-to-istanbul": "^9.3.0",
     "vitest": "^4.0.13"
   }
 }

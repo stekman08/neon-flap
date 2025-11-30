@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/coverage.js';
 
 test.describe('Game Flow', () => {
   test('should display start screen on load', async ({ page }) => {

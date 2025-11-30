@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/coverage.js';
 
 const MIN_FPS_THRESHOLD = 40; // Tests need at least 40 FPS to be reliable
 const MIN_FRAMES_FOR_3_SECONDS = 50; // At least ~17 FPS worth of frames for 3 second test
