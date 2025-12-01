@@ -818,6 +818,72 @@ describe('GameLoop', () => {
     });
   });
 
+  describe('exitTraining() method', () => {
+    it('should reset training flags and show start screen', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.isTraining = true;
+      game.isAutoPlay = true;
+      game.gameState = 'PLAYING';
+
+      // Mock document.getElementById for ai-stats
+      const mockAiStats = { classList: { remove: vi.fn() } };
+      vi.spyOn(document, 'getElementById').mockReturnValue(mockAiStats);
+
+      game.exitTraining();
+
+      expect(game.isTraining).toBe(false);
+      expect(game.isAutoPlay).toBe(false);
+      expect(game.gameState).toBe('START');
+      expect(uiElements.startScreen.classList.add).toHaveBeenCalledWith('active');
+      expect(mockAiStats.classList.remove).toHaveBeenCalledWith('active');
+
+      vi.restoreAllMocks();
+    });
+
+    it('should do nothing if not in training or autoplay mode', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.isTraining = false;
+      game.isAutoPlay = false;
+      game.gameState = 'START';
+
+      const initSpy = vi.spyOn(game, 'init');
+
+      game.exitTraining();
+
+      // init should not be called if not in training mode
+      expect(initSpy).not.toHaveBeenCalled();
+
+      initSpy.mockRestore();
+    });
+
+    it('should hide ai-stats panel if present', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.isTraining = true;
+
+      const mockAiStats = { classList: { remove: vi.fn() } };
+      vi.spyOn(document, 'getElementById').mockReturnValue(mockAiStats);
+
+      game.exitTraining();
+
+      expect(document.getElementById).toHaveBeenCalledWith('ai-stats');
+      expect(mockAiStats.classList.remove).toHaveBeenCalledWith('active');
+
+      vi.restoreAllMocks();
+    });
+
+    it('should handle missing ai-stats element gracefully', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.isTraining = true;
+
+      vi.spyOn(document, 'getElementById').mockReturnValue(null);
+
+      // Should not throw
+      expect(() => game.exitTraining()).not.toThrow();
+
+      vi.restoreAllMocks();
+    });
+  });
+
   describe('localStorage error handling', () => {
     it('should handle localStorage.getItem throwing in private/incognito mode', () => {
       // Simulate private browsing mode where localStorage throws

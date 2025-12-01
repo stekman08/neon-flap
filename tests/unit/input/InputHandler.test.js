@@ -135,6 +135,58 @@ describe('InputHandler', () => {
     });
   });
 
+  describe('training mode exit', () => {
+    it('should exit training mode on tap instead of jumping', () => {
+      game.isTraining = true;
+      game.isAutoPlay = false;
+      game.exitTraining = vi.fn();
+      inputHandler = new InputHandler(game);
+
+      const touchHandler = game.canvas.addEventListener.mock.calls.find(
+        call => call[0] === 'touchstart'
+      )[1];
+
+      const event = { preventDefault: vi.fn() };
+      touchHandler(event);
+
+      expect(game.exitTraining).toHaveBeenCalled();
+      expect(game.start).not.toHaveBeenCalled();
+      expect(game.bird.jump).not.toHaveBeenCalled();
+    });
+
+    it('should exit AI autoplay mode on tap', () => {
+      game.isTraining = false;
+      game.isAutoPlay = true;
+      game.exitTraining = vi.fn();
+      inputHandler = new InputHandler(game);
+
+      const mouseHandler = game.canvas.addEventListener.mock.calls.find(
+        call => call[0] === 'mousedown'
+      )[1];
+
+      mouseHandler();
+
+      expect(game.exitTraining).toHaveBeenCalled();
+      expect(game.start).not.toHaveBeenCalled();
+    });
+
+    it('should exit training mode on spacebar press', () => {
+      game.isTraining = true;
+      game.exitTraining = vi.fn();
+      inputHandler = new InputHandler(game);
+
+      const keydownHandler = window.addEventListener.mock.calls.find(
+        call => call[0] === 'keydown'
+      )[1];
+
+      const event = { code: 'Space', preventDefault: vi.fn() };
+      keydownHandler(event);
+
+      expect(game.exitTraining).toHaveBeenCalled();
+      expect(game.bird.jump).not.toHaveBeenCalled();
+    });
+  });
+
   describe('audio initialization', () => {
     it('should initialize audio on first interaction', () => {
       // Reset audioController for this test
