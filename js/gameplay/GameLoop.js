@@ -241,6 +241,22 @@ export class GameLoop {
     /**
      * Start AI training mode with neuroevolution
      */
+    /**
+     * Exit training or AI mode and return to start screen
+     */
+    exitTraining() {
+        if (!this.isTraining && !this.isAutoPlay) return;
+
+        const aiStats = document.getElementById('ai-stats');
+        if (aiStats) aiStats.classList.remove('active');
+
+        this.isTraining = false;
+        this.isAutoPlay = false;
+        this.init();
+        this.gameState = 'START';
+        this.uiElements.startScreen.classList.add('active');
+    }
+
     startTraining() {
         this.isTraining = true;
         this.isAutoPlay = false;

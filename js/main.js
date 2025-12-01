@@ -281,16 +281,7 @@ function updateTrainButtonText() {
 // Escape key to exit training/AI mode
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && (game.isTraining || game.isAutoPlay)) {
-        // Stop training/AI mode
-        const aiStats = document.getElementById('ai-stats');
-        if (aiStats) aiStats.classList.remove('active');
-        game.isTraining = false;
-        game.isAutoPlay = false;
-        game.init();
-        game.gameState = 'START';
-        uiElements.startScreen.classList.add('active');
-
-        // Update Train AI button text with new best score
+        game.exitTraining();
         updateTrainButtonText();
     }
 });

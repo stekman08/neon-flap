@@ -43,6 +43,12 @@ export class InputHandler {
             }
         }
 
+        // Exit training/AI mode on tap (mobile alternative to Escape key)
+        if (this.game.isTraining || this.game.isAutoPlay) {
+            this.game.exitTraining();
+            return;
+        }
+
         if (this.game.gameState === 'START' || this.game.gameState === 'GAMEOVER') {
             this.game.start();
         } else if (this.game.gameState === 'PLAYING') {
