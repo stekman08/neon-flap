@@ -154,9 +154,10 @@ describe('InputHandler', () => {
       expect(game.bird.jump).not.toHaveBeenCalled();
     });
 
-    it('should exit AI autoplay mode on tap', () => {
+    it('should allow jumping during Watch AI mode (not exit)', () => {
       game.isTraining = false;
       game.isAutoPlay = true;
+      game.gameState = 'PLAYING';
       game.exitTraining = vi.fn();
       inputHandler = new InputHandler(game);
 
@@ -166,8 +167,9 @@ describe('InputHandler', () => {
 
       mouseHandler();
 
-      expect(game.exitTraining).toHaveBeenCalled();
-      expect(game.start).not.toHaveBeenCalled();
+      // Should NOT exit - player can interfere with AI by jumping
+      expect(game.exitTraining).not.toHaveBeenCalled();
+      expect(game.bird.jump).toHaveBeenCalled();
     });
 
     it('should exit training mode on spacebar press', () => {

@@ -43,8 +43,9 @@ export class InputHandler {
             }
         }
 
-        // Exit training/AI mode on tap (mobile alternative to Escape key)
-        if (this.game.isTraining || this.game.isAutoPlay) {
+        // Exit training mode on tap (mobile alternative to Escape key)
+        // But allow jumping during Watch AI mode (isAutoPlay) to let player interfere
+        if (this.game.isTraining) {
             this.game.exitTraining();
             return;
         }

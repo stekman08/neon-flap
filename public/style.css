@@ -202,6 +202,68 @@ canvas {
     margin-bottom: 40px;
 }
 
+/* ============================================
+   ENTRANCE ANIMATIONS - Subtle & Refined
+   ============================================ */
+
+.screen.active .title-block {
+    animation: title-entrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.screen.active .button-group {
+    animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+.screen.active .controls-row {
+    animation: fade-in 0.4s ease-out 0.3s both;
+}
+
+.screen.active .input-hint {
+    animation: fade-in 0.4s ease-out 0.4s both;
+}
+
+@keyframes title-entrance {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+        filter: blur(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Game Over entrance */
+#game-over-screen.active .game-over-content h1 {
+    animation: title-entrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+#game-over-screen.active .score-panel {
+    animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+#game-over-screen.active #restart-btn {
+    animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+}
+
 .title-accent {
     display: block;
     font-family: var(--font-body);
