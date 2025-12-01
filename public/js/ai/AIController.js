@@ -115,12 +115,15 @@ export class AIController {
         }
 
         if (!nextPipe) {
-            const safeZone = canvas.height * 0.6;
-            if (bird.y >= safeZone || (bird.y >= canvas.height / 2 && bird.velocity >= 0)) {
-                aiDebugLog.logAIDecision(bird, null, null, 'jump', `no pipes, y=${Math.round(bird.y)} >= safeZone=${Math.round(safeZone)}`);
+            // No pipes visible - keep bird near center by jumping when falling past center
+            // Only jump when: 1) Actually falling (velocity > 0), AND 2) Below center
+            // This creates stable oscillation and prevents both floor crashes and over-jumping
+            const centerY = canvas.height / 2;
+            if (bird.velocity > 0 && bird.y >= centerY) {
+                aiDebugLog.logAIDecision(bird, null, null, 'jump', `no pipes, y=${Math.round(bird.y)}, vel=${bird.velocity.toFixed(1)}`);
                 bird.jump();
             } else {
-                aiDebugLog.logAIDecision(bird, null, null, 'wait', `no pipes, y=${Math.round(bird.y)} < safeZone=${Math.round(safeZone)}`);
+                aiDebugLog.logAIDecision(bird, null, null, 'wait', `no pipes, y=${Math.round(bird.y)}, vel=${bird.velocity.toFixed(1)}`);
             }
             return;
         }

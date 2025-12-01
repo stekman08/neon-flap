@@ -85,12 +85,24 @@ describe('AIController', () => {
   describe('default behavior', () => {
     it('should maintain center position when no pipes exist', () => {
       pipes = [];
-      bird.y = 400; // Below center
+      bird.y = 400; // Below center (300)
+      bird.velocity = 2; // Falling - required to trigger jump
 
       AIController.performAI(bird, pipes, 170, canvas);
 
-      // Should jump to get back to center
+      // Should jump to get back to center (only when falling AND below center)
       expect(bird.jump).toHaveBeenCalled();
+    });
+
+    it('should not jump when rising even if below center', () => {
+      pipes = [];
+      bird.y = 400; // Below center
+      bird.velocity = -5; // Rising
+
+      AIController.performAI(bird, pipes, 170, canvas);
+
+      // Should NOT jump when rising - prevents over-jumping
+      expect(bird.jump).not.toHaveBeenCalled();
     });
   });
 });
