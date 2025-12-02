@@ -1110,3 +1110,36 @@ button.icon-btn:hover .neon-icon {
     min-width: 40px;
     text-align: right;
 }
+
+/* ============================================
+   PLAYER IDENTITY - Personalized Greeting
+   Usage: ?name=YourName in URL
+   ============================================ */
+
+/* Personalized tagline name highlight */
+.tagline-name {
+    color: var(--mint);
+    text-shadow: 0 0 10px rgba(1, 255, 195, 0.5);
+    font-weight: 400;
+}
+
+/* Game Over personalized message */
+.player-game-over {
+    margin-top: 12px;
+    margin-bottom: -8px;
+    opacity: 0;
+}
+
+#game-over-screen.active .player-game-over {
+    animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+}
+
+.player-go-text {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 4px;
+    color: var(--mint);
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(1, 255, 195, 0.4);
+}

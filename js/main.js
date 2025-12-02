@@ -3,6 +3,7 @@ import { InputHandler } from './input/InputHandler.js';
 import { ViewportManager } from './config/ViewportManager.js';
 import { AudioController } from './audio/AudioController.js';
 import { GameConfig } from './config/GameConfig.js';
+import { playerIdentity } from './config/PlayerIdentity.js';
 
 // Initialize Core Systems
 const canvas = document.getElementById('gameCanvas');
@@ -300,6 +301,13 @@ restartBtn.addEventListener('click', () => {
 
 // Initialize and start
 game.init();
+
+// Initialize player identity (personalized greeting via ?name=)
+if (playerIdentity.hasPlayer()) {
+    playerIdentity.personalizeTagline();
+    playerIdentity.injectGameOverGreeting();
+}
+
 // game.loop() is called when game starts or if we want an attract mode later
 // For now, let's start the loop immediately for background animations (attract mode)
 game.lastTimestamp = performance.now();
