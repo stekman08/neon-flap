@@ -207,7 +207,7 @@ export class Bird {
             size: (Math.random() * 4 + 2) * exhaustScale
         });
 
-        // Update Exhaust particles
+        // Update Exhaust particles (swap-and-pop for O(1) removal)
         const shrinkFactor = Math.pow(0.95, deltaTime);
         for (let i = this.exhaust.length - 1; i >= 0; i--) {
             const p = this.exhaust[i];
@@ -216,7 +216,12 @@ export class Bird {
             p.life -= 0.04 * deltaTime;
             p.size *= shrinkFactor;
             if (p.life <= 0) {
-                this.exhaust.splice(i, 1);
+                // Swap with last element and pop (O(1) instead of splice O(n))
+                const last = this.exhaust.length - 1;
+                if (i !== last) {
+                    this.exhaust[i] = this.exhaust[last];
+                }
+                this.exhaust.pop();
             }
         }
 
