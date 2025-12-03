@@ -137,11 +137,15 @@ export class ScoringSystem {
      * @param {number} deltaTime - Frame delta time
      */
     updatePopups(deltaTime) {
-        for (let i = 0; i < this.scorePopups.length; i++) {
+        // Iterate backwards with swap-and-pop for O(1) removal
+        for (let i = this.scorePopups.length - 1; i >= 0; i--) {
             this.scorePopups[i].update(deltaTime);
             if (this.scorePopups[i].life <= 0) {
-                this.scorePopups.splice(i, 1);
-                i--;
+                const last = this.scorePopups.length - 1;
+                if (i !== last) {
+                    this.scorePopups[i] = this.scorePopups[last];
+                }
+                this.scorePopups.pop();
             }
         }
     }
