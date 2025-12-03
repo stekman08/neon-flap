@@ -1,5 +1,8 @@
 import { GameConfig } from '../config/GameConfig.js';
 
+// Pre-computed constant
+const STAR_COLOR = '#fff';
+
 export class Star {
     constructor(canvas, ctx) {
         this.canvas = canvas;
@@ -29,7 +32,7 @@ export class Star {
     }
 
     draw(ctx) {
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = STAR_COLOR;
         ctx.globalAlpha = this.alpha;
         ctx.fillRect(this.x, this.y, this.size, this.size);
         ctx.globalAlpha = 1.0;

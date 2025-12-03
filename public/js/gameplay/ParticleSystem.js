@@ -1,10 +1,21 @@
-// Pre-computed constant
+// Pre-computed constants
 const TWO_PI = Math.PI * 2;
+
+// Pre-computed RGBA colors for jump particles (10 alpha levels)
+const JUMP_COLORS = [];
+for (let i = 0; i < 10; i++) {
+    const alpha = (i + 1) / 10; // 0.1 to 1.0
+    JUMP_COLORS.push(`rgba(0, 255, 255, ${alpha})`);
+}
 
 export class ParticleSystem {
     constructor(ctx) {
         this.ctx = ctx;
         this.particles = [];
+
+        // Cached HSL color for pipe cleared effect
+        this.cachedPipeHue = -1;
+        this.cachedPipeColor = '';
     }
 
     // Create particles for a jump effect
@@ -16,7 +27,7 @@ export class ParticleSystem {
                 vx: (Math.random() - 0.5) * 4,
                 vy: (Math.random() - 0.5) * 4 + 2, // Downward bias
                 life: 1.0,
-                color: `rgba(0, 255, 255, ${Math.random()})`,
+                color: JUMP_COLORS[Math.floor(Math.random() * 10)],
                 size: Math.random() * 3 + 1
             });
         }
@@ -41,6 +52,12 @@ export class ParticleSystem {
 
     // Create sparkle effect when passing a pipe
     createPipeClearedEffect(x, y, hue) {
+        // Update cached color if hue changed significantly
+        if (Math.abs(hue - this.cachedPipeHue) > 3) {
+            this.cachedPipeHue = hue;
+            this.cachedPipeColor = `hsl(${Math.round(hue)}, 100%, 70%)`;
+        }
+
         const particleCount = 8;
         for (let i = 0; i < particleCount; i++) {
             // Spread particles in a small burst behind the bird
@@ -52,7 +69,7 @@ export class ParticleSystem {
                 vx: -Math.abs(Math.cos(angle) * speed) - 1, // Always move left/backward
                 vy: Math.sin(angle) * speed,
                 life: 0.8,
-                color: `hsl(${hue}, 100%, 70%)`,
+                color: this.cachedPipeColor,
                 size: Math.random() * 2 + 1
             });
         }
@@ -70,9 +87,13 @@ export class ParticleSystem {
             p.life -= lifeDrain;
             p.size *= shrinkFactor;
 
-            // Remove dead particles
+            // Remove dead particles (swap-and-pop for O(1) removal)
             if (p.life <= 0) {
-                this.particles.splice(i, 1);
+                const last = this.particles.length - 1;
+                if (i !== last) {
+                    this.particles[i] = this.particles[last];
+                }
+                this.particles.pop();
             }
         }
     }

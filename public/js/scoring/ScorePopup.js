@@ -1,3 +1,6 @@
+// Pre-computed constant
+const POPUP_FONT = 'bold 30px Orbitron';
+
 export class ScorePopup {
     constructor(x, y, text, ctx, color = '#fff') {
         this.x = x;
@@ -18,7 +21,7 @@ export class ScorePopup {
         ctx.fillStyle = this.color;
         ctx.shadowBlur = 10;
         ctx.shadowColor = this.color;
-        ctx.font = 'bold 30px Orbitron';
+        ctx.font = POPUP_FONT;
         ctx.fillText(this.text, this.x, this.y);
         ctx.restore();
     }

@@ -1,3 +1,6 @@
+// Pre-computed constant
+const TWO_PI = Math.PI * 2;
+
 export class Particle {
     constructor(x = 0, y = 0, color = '#fff', ctx = null) {
         this.ctx = ctx;
@@ -25,7 +28,7 @@ export class Particle {
         ctx.globalAlpha = this.life;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.size, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
     }

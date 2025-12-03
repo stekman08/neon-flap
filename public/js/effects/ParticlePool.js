@@ -39,11 +39,17 @@ export class ParticlePool {
 
     /**
      * Release a particle back to the pool for reuse
+     * Uses swap-and-pop for O(1) removal instead of O(n) splice
      */
     release(particle) {
         const index = this.active.indexOf(particle);
         if (index > -1) {
-            this.active.splice(index, 1);
+            // Swap with last element and pop (O(1) instead of splice O(n))
+            const last = this.active.length - 1;
+            if (index !== last) {
+                this.active[index] = this.active[last];
+            }
+            this.active.pop();
             this.pool.push(particle);
         }
     }
@@ -56,9 +62,13 @@ export class ParticlePool {
             const particle = this.active[i];
             particle.update(deltaTime);
 
-            // Auto-release dead particles
+            // Auto-release dead particles (swap-and-pop for O(1) removal)
             if (particle.life <= 0) {
-                this.active.splice(i, 1);
+                const last = this.active.length - 1;
+                if (i !== last) {
+                    this.active[i] = this.active[last];
+                }
+                this.active.pop();
                 this.pool.push(particle);
             }
         }
