@@ -346,10 +346,14 @@ export class GameLoop {
                     }
                 }
 
-                // Remove off-screen pipes
+                // Remove off-screen pipes (swap-and-pop for O(1) removal)
                 if (p.x + p.width < 0) {
-                    this.pipes.splice(i, 1);
-                    i--;
+                    const last = this.pipes.length - 1;
+                    if (i !== last) {
+                        this.pipes[i] = this.pipes[last];
+                    }
+                    this.pipes.pop();
+                    i--; // Re-check this index since we swapped
                 }
             }
         }
