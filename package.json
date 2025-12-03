@@ -15,6 +15,7 @@
     "coverage:merge": "node scripts/merge-coverage.js",
     "coverage:report": "npx nyc report --reporter=text --reporter=html --temp-dir=coverage/merged",
     "test:ui": "vitest --ui",
+    "test:bench": "vitest bench --config vitest.bench.config.js",
     "prepare": "husky"
   },
   "dependencies": {
