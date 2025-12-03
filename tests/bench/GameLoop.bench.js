@@ -1,5 +1,33 @@
-import { bench, describe, beforeEach } from 'vitest';
+import { bench, describe, vi } from 'vitest';
 import { GameLoop } from '../../public/js/gameplay/GameLoop.js';
+
+// Mock ScorePopup module
+vi.mock('../../public/js/scoring/ScorePopup.js', () => ({
+  ScorePopup: class {
+    constructor(x, y, text, ctx, color) {
+      this.x = x;
+      this.y = y;
+      this.text = text;
+      this.life = 1;
+    }
+    update() { this.life -= 0.02; }
+    draw() { }
+  }
+}));
+
+// Mock localStorage
+globalThis.localStorage = {
+  getItem: () => '10',
+  setItem: () => {}
+};
+
+// Mock document.querySelector for CRT overlay
+document.querySelector = () => ({
+  classList: {
+    add: () => {},
+    remove: () => {}
+  }
+});
 
 // Mock canvas and context
 const ctx = {
@@ -16,6 +44,7 @@ const ctx = {
   fillRect: () => {},
   clearRect: () => {},
   rect: () => {},
+  clip: () => {},
   stroke: () => {},
   fillText: () => {},
   measureText: () => ({ width: 100 }),
@@ -42,16 +71,18 @@ const canvas = {
 };
 
 // Mock UI elements
+const scoreNumberEl = { innerText: '' };
 const uiElements = {
   startScreen: { classList: { add: () => {}, remove: () => {} }, style: {} },
   gameOverScreen: { classList: { add: () => {}, remove: () => {} }, style: {} },
   scoreHud: {
     classList: { add: () => {}, remove: () => {} },
-    style: {}
+    style: {},
+    querySelector: () => scoreNumberEl
   },
   currentScoreEl: { textContent: '' },
-  finalScoreEl: { textContent: '' },
-  bestScoreEl: { textContent: '' },
+  finalScoreEl: { innerText: '' },
+  bestScoreEl: { innerText: '' },
   aiStatusEl: { textContent: '', classList: { add: () => {}, remove: () => {} } },
   aiGenerationEl: { textContent: '' },
   aiFitnessEl: { textContent: '' }
@@ -62,6 +93,7 @@ const audioController = {
   playJump: () => {},
   playCrash: () => {},
   playScore: () => {},
+  playPerfectScore: () => {},
   playDrum: () => {}
 };
 
