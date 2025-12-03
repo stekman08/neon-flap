@@ -8,6 +8,24 @@ export class SynthGrid {
         this.speed = 0;
         this.offset = 0;
         this.gridSize = GameConfig.scaleWidth(40); // 10% of width
+
+        // Cached gradient (recreated only when hue changes significantly)
+        this.cachedHue = -1;
+        this.cachedGradient = null;
+    }
+
+    /**
+     * Update cached gradient when hue changes significantly
+     */
+    updateGradientCache(ctx, gameHue) {
+        if (Math.abs(gameHue - this.cachedHue) > 3) {
+            const hue = Math.round(gameHue);
+            this.cachedHue = gameHue;
+            this.cachedGradient = ctx.createLinearGradient(0, this.horizonY, 0, this.canvas.height);
+            this.cachedGradient.addColorStop(0, `hsla(${hue}, 100%, 50%, 0.0)`);
+            this.cachedGradient.addColorStop(0.2, `hsla(${hue}, 100%, 50%, 0.1)`);
+            this.cachedGradient.addColorStop(1, `hsla(${hue}, 100%, 50%, 0.4)`);
+        }
     }
 
     update(currentPipeSpeed, gameHue, deltaTime = 1) {
@@ -16,6 +34,9 @@ export class SynthGrid {
     }
 
     draw(ctx, gameHue) {
+        // Update gradient cache if needed
+        this.updateGradientCache(ctx, gameHue);
+
         ctx.save();
         ctx.beginPath();
 
@@ -23,13 +44,7 @@ export class SynthGrid {
         ctx.rect(0, this.horizonY, this.canvas.width, this.canvas.height - this.horizonY);
         ctx.clip();
 
-        // Gradient fade for the grid
-        const gradient = ctx.createLinearGradient(0, this.horizonY, 0, this.canvas.height);
-        gradient.addColorStop(0, `hsla(${gameHue}, 100%, 50%, 0.0)`);
-        gradient.addColorStop(0.2, `hsla(${gameHue}, 100%, 50%, 0.1)`);
-        gradient.addColorStop(1, `hsla(${gameHue}, 100%, 50%, 0.4)`);
-
-        ctx.strokeStyle = gradient;
+        ctx.strokeStyle = this.cachedGradient;
         ctx.lineWidth = GameConfig.scaleWidth(2);
 
         // Vertical Perspective Lines
