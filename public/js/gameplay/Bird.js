@@ -27,12 +27,18 @@ export class Bird {
             this.contrail[i] = { x: 0, y: 0, active: false };
         }
         this.contrailIndex = 0;
+        this.contrailActiveCount = 0;
 
         // Cached values (updated in update(), used in draw())
         // Note: halfWidth/halfHeight are set by updateDimensions() above
         this.centerX = 0;
         this.centerY = 0;
         this.rotation = 0;
+
+        // Cached flame values (updated periodically, not every frame)
+        this.flameLength = 20;
+        this.flameWidth = 7;
+        this.flameUpdateCounter = 0;
 
         // Cached color strings (updated when hue changes significantly)
         this.cachedHue = -1;
@@ -70,13 +76,8 @@ export class Bird {
     draw(ctx, gameHue) {
         this.updateColorCache(gameHue);
 
-        // Draw contrail behind the ship (circular buffer)
-        let activeCount = 0;
-        for (let i = 0; i < CONTRAIL_LENGTH; i++) {
-            if (this.contrail[i].active) activeCount++;
-        }
-
-        if (activeCount > 1) {
+        // Draw contrail behind the ship (uses pre-tracked count)
+        if (this.contrailActiveCount > 1) {
             ctx.save();
             ctx.beginPath();
 
@@ -123,10 +124,8 @@ export class Bird {
         ctx.translate(this.centerX, this.centerY);
         ctx.rotate(this.rotation);
 
-        // Engine Flame (Dynamic flicker)
-        const flameLength = Math.random() * 20 + 10;
-        const flameWidth = Math.random() * 6 + 4;
-        const halfFlameWidth = flameWidth / 2;
+        // Engine Flame (uses cached values, updated periodically in update())
+        const halfFlameWidth = this.flameWidth / 2;
 
         // Outer flame
         ctx.fillStyle = '#ff4500';
@@ -134,16 +133,16 @@ export class Bird {
         ctx.shadowColor = '#ff0000';
         ctx.beginPath();
         ctx.moveTo(-this.halfWidth, -halfFlameWidth);
-        ctx.lineTo(-this.halfWidth - flameLength, 0);
+        ctx.lineTo(-this.halfWidth - this.flameLength, 0);
         ctx.lineTo(-this.halfWidth, halfFlameWidth);
         ctx.fill();
 
         // Inner flame
         ctx.fillStyle = '#ffff00';
         ctx.beginPath();
-        ctx.moveTo(-this.halfWidth, -flameWidth / 4);
-        ctx.lineTo(-this.halfWidth - flameLength * 0.6, 0);
-        ctx.lineTo(-this.halfWidth, flameWidth / 4);
+        ctx.moveTo(-this.halfWidth, -this.flameWidth / 4);
+        ctx.lineTo(-this.halfWidth - this.flameLength * 0.6, 0);
+        ctx.lineTo(-this.halfWidth, this.flameWidth / 4);
         ctx.fill();
 
         // Ship Body
@@ -184,6 +183,14 @@ export class Bird {
         // Update color cache if needed
         this.updateColorCache(gameHue);
 
+        // Update flame values periodically (every 3 frames) for flicker effect
+        this.flameUpdateCounter++;
+        if (this.flameUpdateCounter >= 3) {
+            this.flameUpdateCounter = 0;
+            this.flameLength = Math.random() * 20 + 10;
+            this.flameWidth = Math.random() * 6 + 4;
+        }
+
         // Engine is at local (-halfWidth, 0) rotated
         const engineX = this.centerX + (-this.halfWidth) * Math.cos(this.rotation);
         const engineY = this.centerY + (-this.halfWidth) * Math.sin(this.rotation);
@@ -196,12 +203,12 @@ export class Bird {
             vx: -3 - Math.random(),
             vy: (Math.random() - 0.5) * 2,
             life: 0.8,
-            color: this.exhaustColor, // Use cached color
+            color: this.exhaustColor,
             size: (Math.random() * 4 + 2) * exhaustScale
         });
 
-        // Update Exhaust
-        const shrinkFactor = Math.pow(0.95, deltaTime); // Calculate once
+        // Update Exhaust particles
+        const shrinkFactor = Math.pow(0.95, deltaTime);
         for (let i = this.exhaust.length - 1; i >= 0; i--) {
             const p = this.exhaust[i];
             p.x += p.vx * deltaTime;
@@ -214,10 +221,14 @@ export class Bird {
         }
 
         // Update Contrail using circular buffer (no allocation)
-        const contrailPoint = this.contrail[this.contrailIndex];
-        contrailPoint.x = engineX;
-        contrailPoint.y = engineY;
-        contrailPoint.active = true;
+        // Track if we're replacing an active point
+        const oldPoint = this.contrail[this.contrailIndex];
+        if (!oldPoint.active && this.contrailActiveCount < CONTRAIL_LENGTH) {
+            this.contrailActiveCount++;
+        }
+        oldPoint.x = engineX;
+        oldPoint.y = engineY;
+        oldPoint.active = true;
         this.contrailIndex = (this.contrailIndex + 1) % CONTRAIL_LENGTH;
 
         // Move contrail points to the left (simulate world movement)
