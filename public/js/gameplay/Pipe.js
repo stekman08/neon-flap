@@ -42,12 +42,35 @@ export class Pipe {
 
         // Store hue offset for variety
         this.hueOffset = Math.random() * 360;
+
+        // Cached color strings (updated when hue changes)
+        this.cachedHue = -1;
+        this.pipeColor = '';
+        this.cachedBrightness = -1;
+        this.dynamicColor = '';
+    }
+
+    /**
+     * Update cached color strings when hue or brightness changes
+     */
+    updateColorCache(gameHue, brightness) {
+        const complementaryHue = Math.round((gameHue + 180) % 360);
+
+        // Update pipe shadow color if hue changed
+        if (Math.abs(gameHue - this.cachedHue) > 3) {
+            this.cachedHue = gameHue;
+            this.pipeColor = `hsl(${complementaryHue}, 100%, 50%)`;
+        }
+
+        // Update dynamic fill color if brightness changed
+        if (Math.abs(brightness - this.cachedBrightness) > 1) {
+            this.cachedBrightness = brightness;
+            this.dynamicColor = `hsl(${complementaryHue}, 100%, ${Math.round(brightness)}%)`;
+        }
     }
 
     draw(ctx, gameHue, bird) {
         ctx.save();
-        // Make pipes complementary to the bird
-        const pipeColor = `hsl(${gameHue + 180}, 100%, 50%)`;
 
         // Proximity Glow Logic
         let shadowBlur = 15;
@@ -63,11 +86,12 @@ export class Pipe {
             }
         }
 
-        const dynamicColor = `hsl(${gameHue + 180}, 100%, ${brightness}%)`;
+        // Update cached colors (only regenerates strings when values change)
+        this.updateColorCache(gameHue, brightness);
 
         ctx.shadowBlur = shadowBlur;
-        ctx.shadowColor = pipeColor;
-        ctx.fillStyle = dynamicColor;
+        ctx.shadowColor = this.pipeColor;
+        ctx.fillStyle = this.dynamicColor;
 
         // Top Pipe
         ctx.fillRect(this.x, 0, this.width, this.topHeight);

@@ -1,3 +1,6 @@
+// Pre-computed constant
+const TWO_PI = Math.PI * 2;
+
 export class ParticleSystem {
     constructor(ctx) {
         this.ctx = ctx;
@@ -56,12 +59,16 @@ export class ParticleSystem {
     }
 
     update(deltaTime = 1) {
+        // Cache shrink factor (calculate once per frame, not per particle)
+        const shrinkFactor = Math.pow(0.95, deltaTime);
+        const lifeDrain = 0.02 * deltaTime;
+
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             p.x += p.vx * deltaTime;
             p.y += p.vy * deltaTime;
-            p.life -= 0.02 * deltaTime;
-            p.size *= Math.pow(0.95, deltaTime); // Shrink
+            p.life -= lifeDrain;
+            p.size *= shrinkFactor;
 
             // Remove dead particles
             if (p.life <= 0) {
@@ -71,14 +78,17 @@ export class ParticleSystem {
     }
 
     draw() {
-        this.particles.forEach(p => {
-            this.ctx.globalAlpha = p.life;
-            this.ctx.fillStyle = p.color;
-            this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            this.ctx.fill();
-        });
-        this.ctx.globalAlpha = 1.0;
+        const ctx = this.ctx;
+        const particles = this.particles;
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, TWO_PI);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
     }
 
     reset() {

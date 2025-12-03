@@ -246,10 +246,14 @@ export class GameLoop {
         const gameHue = this.effects.updateHue(this.scoring.getScore(), this.audioController);
 
         // Update background elements
-        this.stars.forEach(star => star.update(this.currentPipeSpeed, deltaTime));
+        for (let i = 0; i < this.stars.length; i++) {
+            this.stars[i].update(this.currentPipeSpeed, deltaTime);
+        }
         this.city.update(this.currentPipeSpeed, gameHue, deltaTime);
         this.synthGrid.update(this.currentPipeSpeed, gameHue, deltaTime);
-        this.matrixRain.forEach(col => col.update(gameHue, deltaTime));
+        for (let i = 0; i < this.matrixRain.length; i++) {
+            this.matrixRain[i].update(gameHue, deltaTime);
+        }
 
         if (this.gameState === 'PLAYING') {
             // Handle different game modes
@@ -358,7 +362,7 @@ export class GameLoop {
         this.performanceMonitor.markUpdateEnd();
     }
 
-    draw() {
+    draw(time = 0) {
         this.performanceMonitor.markDrawStart();
 
         const gameHue = this.effects.getHue();
@@ -371,13 +375,19 @@ export class GameLoop {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         // Draw background layers
-        this.stars.forEach(star => star.draw(this.ctx));
-        this.matrixRain.forEach(col => col.draw(this.ctx, gameHue));
-        this.city.draw(this.ctx, gameHue);
+        for (let i = 0; i < this.stars.length; i++) {
+            this.stars[i].draw(this.ctx);
+        }
+        for (let i = 0; i < this.matrixRain.length; i++) {
+            this.matrixRain[i].draw(this.ctx, gameHue);
+        }
+        this.city.draw(this.ctx, gameHue, time);
         this.synthGrid.draw(this.ctx, gameHue);
 
         // Draw Pipes
-        this.pipes.forEach(p => p.draw(this.ctx, gameHue, this.bird));
+        for (let i = 0; i < this.pipes.length; i++) {
+            this.pipes[i].draw(this.ctx, gameHue, this.bird);
+        }
 
         // Draw Bird(s) - only if not game over
         if (this.gameState !== 'GAMEOVER') {
@@ -424,8 +434,11 @@ export class GameLoop {
         const deltaTime = rawDelta / 16.67;
         this.lastTimestamp = timestamp;
 
+        // Convert timestamp to seconds for time-based animations
+        const timeInSeconds = timestamp * 0.001;
+
         this.update(deltaTime);
-        this.draw();
+        this.draw(timeInSeconds);
 
         this.performanceMonitor.endFrame();
         requestAnimationFrame(this.loop);

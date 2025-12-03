@@ -9,9 +9,30 @@ export class CitySkyline {
         this.nextForeX = 0;
         this.nextBackX = 0;
 
+        // Cached color strings (updated when hue changes)
+        this.cachedHue = -1;
+        this.backBuildingColor = '';
+        this.foreBuildingColor = '';
+        this.foreShadowColor = '';
+        this.coolWindowShadow = '';
+
         // Fill screen initially
         this.initLayer(this.foreground, 'nextForeX', false);
         this.initLayer(this.background, 'nextBackX', true);
+    }
+
+    /**
+     * Update cached color strings when hue changes significantly
+     */
+    updateColorCache(gameHue) {
+        if (Math.abs(gameHue - this.cachedHue) > 3) {
+            const hue = Math.round(gameHue);
+            this.cachedHue = gameHue;
+            this.backBuildingColor = `hsl(${hue}, 40%, 10%)`;
+            this.foreBuildingColor = `hsl(${hue}, 60%, 15%)`;
+            this.foreShadowColor = `hsl(${hue}, 60%, 10%)`;
+            this.coolWindowShadow = `hsla(${hue}, 100%, 60%, 0.5)`;
+        }
     }
 
     initLayer(layer, nextXProp, isBack) {
@@ -125,9 +146,9 @@ export class CitySkyline {
     }
 
     updateLayer(layer, nextXProp, speed, isBack) {
-        layer.forEach(b => {
-            b.x -= speed;
-        });
+        for (let i = 0; i < layer.length; i++) {
+            layer[i].x -= speed;
+        }
 
         if (layer.length > 0 && layer[0].x + layer[0].width < 0) {
             layer.shift();
@@ -140,31 +161,36 @@ export class CitySkyline {
         }
     }
 
-    draw(ctx, gameHue) {
+    draw(ctx, gameHue, time = null) {
+        // Use passed time or fall back to Date.now()
+        const t = time !== null ? time : Date.now() * 0.001;
+
         ctx.save();
-        const time = Date.now() * 0.001;
+        this.updateColorCache(gameHue);
 
         // Draw Background Layer (Darker, further away)
-        this.drawLayer(ctx, this.background, gameHue, time, true);
+        this.drawLayer(ctx, this.background, gameHue, t, true);
 
         // Draw Foreground Layer
-        this.drawLayer(ctx, this.foreground, gameHue, time, false);
+        this.drawLayer(ctx, this.foreground, gameHue, t, false);
 
         ctx.restore();
     }
 
     drawLayer(ctx, layer, gameHue, time, isBack) {
-        const buildingColor = isBack
-            ? `hsl(${gameHue}, 40%, 10%)`
-            : `hsl(${gameHue}, 60%, 15%)`;
+        // Use cached building colors
+        const buildingColor = isBack ? this.backBuildingColor : this.foreBuildingColor;
+        const shadowColor = isBack ? 'transparent' : this.foreShadowColor;
+        const hue = Math.round(gameHue);
 
-        layer.forEach(b => {
+        for (let i = 0; i < layer.length; i++) {
+            const b = layer[i];
             const buildingY = this.canvas.height - b.height;
 
             // Draw building body based on roof style
             ctx.fillStyle = buildingColor;
             ctx.shadowBlur = isBack ? 0 : 10;
-            ctx.shadowColor = isBack ? 'transparent' : `hsl(${gameHue}, 60%, 10%)`;
+            ctx.shadowColor = shadowColor;
 
             this.drawBuildingShape(ctx, b, buildingY, buildingColor);
 
@@ -180,8 +206,10 @@ export class CitySkyline {
 
             // Draw windows with glow
             ctx.shadowBlur = 0;
-            b.windows.forEach(w => {
-                if (!w.isLit) return;
+            const windows = b.windows;
+            for (let j = 0; j < windows.length; j++) {
+                const w = windows[j];
+                if (!w.isLit) continue;
 
                 // Subtle pulsing effect
                 const pulse = Math.sin(time * 2 + w.pulsePhase) * 0.15 + 0.85;
@@ -191,17 +219,18 @@ export class CitySkyline {
                 if (w.isBright) {
                     ctx.shadowBlur = 12;
                     ctx.shadowColor = 'rgba(255, 255, 200, 0.8)';
-                    ctx.fillStyle = `rgba(255, 255, 220, 0.95)`;
+                    ctx.fillStyle = 'rgba(255, 255, 220, 0.95)';
                 } else {
                     // Warm windows (yellow/orange) or cool windows (cyan/white)
+                    // Note: alpha varies per window, so can't fully cache
                     const windowColor = w.isWarm
-                        ? `rgba(255, 220, 150, ${alpha})`
-                        : `hsla(${gameHue}, 80%, 75%, ${alpha})`;
+                        ? `rgba(255, 220, 150, ${alpha.toFixed(2)})`
+                        : `hsla(${hue}, 80%, 75%, ${alpha.toFixed(2)})`;
 
                     // Add subtle glow for foreground windows
                     if (!isBack) {
                         ctx.shadowBlur = 6;
-                        ctx.shadowColor = w.isWarm ? 'rgba(255, 200, 100, 0.5)' : `hsla(${gameHue}, 100%, 60%, 0.5)`;
+                        ctx.shadowColor = w.isWarm ? 'rgba(255, 200, 100, 0.5)' : this.coolWindowShadow;
                     } else {
                         ctx.shadowBlur = 0;
                     }
@@ -209,9 +238,9 @@ export class CitySkyline {
                 }
 
                 ctx.fillRect(b.x + w.relX, buildingY + w.relY, w.width, w.height);
-            });
+            }
             ctx.shadowBlur = 0;
-        });
+        }
     }
 
     drawBuildingShape(ctx, b, buildingY, buildingColor) {

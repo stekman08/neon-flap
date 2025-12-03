@@ -32,6 +32,16 @@ describe('Bird', () => {
       expect(bird.height).toBe(30);
       expect(bird.velocity).toBe(0);
     });
+
+    it('should initialize halfWidth and halfHeight for drawing', () => {
+      const bird = new Bird(canvas, ctx, 0, createParticles, gameOver);
+
+      // These must be set correctly for the bird to render at proper size
+      expect(bird.halfWidth).toBe(15); // width / 2
+      expect(bird.halfHeight).toBe(15); // height / 2
+      expect(bird.halfWidth).toBeGreaterThan(0);
+      expect(bird.halfHeight).toBeGreaterThan(0);
+    });
   });
 
   describe('gravity', () => {
@@ -140,9 +150,12 @@ describe('Bird', () => {
 
       bird.update(0, 1, 5);
 
-      expect(bird.contrail.length).toBe(1);
-      expect(bird.contrail[0]).toHaveProperty('x');
-      expect(bird.contrail[0]).toHaveProperty('y');
+      // Circular buffer is pre-allocated with 40 slots, count active points
+      expect(bird.contrail.length).toBe(40); // Buffer size is fixed
+      const activePoints = bird.contrail.filter((p) => p.active);
+      expect(activePoints.length).toBe(1);
+      expect(activePoints[0]).toHaveProperty('x');
+      expect(activePoints[0]).toHaveProperty('y');
     });
 
     it('should limit contrail length to 40 points', () => {
@@ -152,17 +165,23 @@ describe('Bird', () => {
         bird.update(0, 1, 5);
       }
 
+      // Circular buffer stays at 40, all points should be active after 50 updates
       expect(bird.contrail.length).toBe(40);
+      const activePoints = bird.contrail.filter((p) => p.active);
+      expect(activePoints.length).toBe(40);
     });
 
     it('should move contrail points left based on currentSpeed', () => {
       const bird = new Bird(canvas, ctx, 0, createParticles, gameOver);
       bird.update(0, 1, 0);
-      const initialX = bird.contrail[0].x;
+      // Find the first active point in the circular buffer
+      const activePoint = bird.contrail.find((p) => p.active);
+      const initialX = activePoint.x;
 
       bird.update(0, 1, 10);
 
-      expect(bird.contrail[0].x).toBe(initialX - 10);
+      // The first point should have moved left by speed * deltaTime
+      expect(activePoint.x).toBe(initialX - 10);
     });
   });
 
