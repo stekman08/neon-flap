@@ -18,6 +18,15 @@ export class PlayerIdentity {
             // Sanitize name (max 20 chars)
             this.playerName = this.sanitizeName(name.trim().slice(0, 20));
             this.initialized = true;
+            // Save to cookie (shared between Safari and PWA on iOS)
+            document.cookie = `neonflap_playerName=${encodeURIComponent(this.playerName)}; max-age=31536000; path=/; SameSite=Strict`;
+        } else {
+            // Read from cookie (works across Safari/PWA on iOS)
+            const cookieMatch = document.cookie.match(/neonflap_playerName=([^;]+)/);
+            if (cookieMatch) {
+                this.playerName = decodeURIComponent(cookieMatch[1]);
+                this.initialized = true;
+            }
         }
     }
 
