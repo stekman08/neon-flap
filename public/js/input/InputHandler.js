@@ -52,6 +52,14 @@ export class InputHandler {
 
         if (this.game.gameState === 'START' || this.game.gameState === 'GAMEOVER') {
             this.game.start();
+        } else if (this.game.gameState === 'READY') {
+            // First tap after START - begin playing
+            this.game.startPlaying();
+
+            // Haptic feedback (light)
+            if (navigator.vibrate) {
+                navigator.vibrate(10);
+            }
         } else if (this.game.gameState === 'PLAYING') {
             // Trigger jump
             this.game.bird.jump();

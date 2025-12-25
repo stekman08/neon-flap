@@ -22,7 +22,11 @@ test.describe('Game Flow', () => {
     const startScreen = page.locator('#start-screen');
     await expect(startScreen).not.toHaveClass(/active/);
 
-    // Score HUD should be visible
+    // Game may be in READY state (tutorial), tap to start playing
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(50);
+
+    // Score HUD should be visible after transitioning to PLAYING
     const scoreHud = page.locator('#score-hud');
     await expect(scoreHud).toBeVisible();
 
@@ -50,6 +54,10 @@ test.describe('Game Flow', () => {
   test('should show game over screen after collision', async ({ page }) => {
     await page.goto('/');
     await page.click('#start-btn');
+
+    // Tap to transition from READY to PLAYING
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(50);
 
     // Force bird to floor by setting y position high
     await page.evaluate(() => {
@@ -176,6 +184,10 @@ test.describe('localStorage Error Handling', () => {
     // Game should still work
     const startBtn = page.locator('#start-btn');
     await startBtn.click();
+
+    // Tap to transition from READY to PLAYING (tutorial may be shown)
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(50);
 
     const gameState = await page.evaluate(() => window.__GAME__?.gameState);
     expect(gameState).toBe('PLAYING');

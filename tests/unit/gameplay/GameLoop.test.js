@@ -65,8 +65,12 @@ describe('GameLoop', () => {
     };
 
     global.localStorage = {
-      getItem: vi.fn(() => '10'),
-      setItem: vi.fn()
+      getItem: vi.fn((key) => {
+        if (key === 'neonFlapHighScore') return '10';
+        return null; // Tutorial counter starts at null/0
+      }),
+      setItem: vi.fn(),
+      removeItem: vi.fn()
     };
 
     // Mock document.querySelector for CRT overlay
@@ -716,24 +720,38 @@ describe('GameLoop', () => {
   });
 
   describe('start() method', () => {
-    it('should start game from START state', () => {
+    it('should start game from START state (human mode goes to READY)', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
       game.init();
       game.gameState = 'START';
+      game.isAutoPlay = false;
+
+      game.start();
+
+      expect(game.gameState).toBe('READY');
+    });
+
+    it('should start game from START state (AI mode goes to PLAYING)', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'START';
+      game.isAutoPlay = true;
 
       game.start();
 
       expect(game.gameState).toBe('PLAYING');
     });
 
-    it('should start game from GAMEOVER state', () => {
+    it('should start game from GAMEOVER state (human mode goes to READY)', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
       game.init();
       game.gameState = 'GAMEOVER';
+      game.gameOverTime = Date.now() - 800;
+      game.isAutoPlay = false;
 
       game.start();
 
-      expect(game.gameState).toBe('PLAYING');
+      expect(game.gameState).toBe('READY');
     });
 
     it('should remove active class from start screen', () => {
@@ -756,14 +774,28 @@ describe('GameLoop', () => {
       expect(uiElements.gameOverScreen.classList.remove).toHaveBeenCalledWith('active');
     });
 
-    it('should show score HUD', () => {
+    it('should show score HUD (AI mode)', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
       game.init();
       game.gameState = 'START';
+      game.isAutoPlay = true;
 
       game.start();
 
       expect(uiElements.scoreHud.style.display).toBe('flex');
+    });
+
+    it('should not show score HUD in READY state (human mode)', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'START';
+      game.isAutoPlay = false;
+      uiElements.scoreHud.style.display = 'none';
+
+      game.start();
+
+      // Score HUD is shown when transitioning to PLAYING, not READY
+      expect(uiElements.scoreHud.style.display).toBe('none');
     });
 
     it('should not start if already PLAYING', () => {
@@ -790,16 +822,31 @@ describe('GameLoop', () => {
       expect(game.gameState).toBe('GAMEOVER');
     });
 
-    it('should allow restart after 750ms cooldown', () => {
+    it('should allow restart after 750ms cooldown (human mode goes to READY)', () => {
       const game = new GameLoop(canvas, ctx, uiElements);
       game.init();
       game.gameState = 'GAMEOVER';
       game.gameOverTime = Date.now() - 800; // 800ms ago (past cooldown)
+      game.isAutoPlay = false;
 
       game.start();
 
-      // Should now be PLAYING
-      expect(game.gameState).toBe('PLAYING');
+      // Human mode goes to READY first
+      expect(game.gameState).toBe('READY');
+    });
+
+    it('should reset to human mode when restarting from GAMEOVER (init resets isAutoPlay)', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'GAMEOVER';
+      game.gameOverTime = Date.now() - 800; // 800ms ago (past cooldown)
+      game.isAutoPlay = true; // This will be reset by init() when starting from GAMEOVER
+
+      game.start();
+
+      // init() resets isAutoPlay to false, so human mode flow kicks in (READY)
+      expect(game.isAutoPlay).toBe(false);
+      expect(game.gameState).toBe('READY');
     });
 
     it('should reset game state when starting from GAMEOVER', () => {
@@ -815,6 +862,163 @@ describe('GameLoop', () => {
       // Score and pipes should be reset
       expect(game.score).toBe(0);
       expect(game.pipes).toEqual([]);
+    });
+  });
+
+  describe('startPlaying() method', () => {
+    it('should transition from READY to PLAYING', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'READY';
+
+      game.startPlaying();
+
+      expect(game.gameState).toBe('PLAYING');
+    });
+
+    it('should show score HUD when transitioning to PLAYING', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'READY';
+      uiElements.scoreHud.style.display = 'none';
+
+      game.startPlaying();
+
+      expect(uiElements.scoreHud.style.display).toBe('flex');
+    });
+
+    it('should not do anything if not in READY state', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'START';
+
+      game.startPlaying();
+
+      expect(game.gameState).toBe('START');
+    });
+
+    it('should make bird jump when transitioning to PLAYING', () => {
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'READY';
+      game.bird.velocity = 0;
+
+      game.startPlaying();
+
+      // Bird should have jumped (negative velocity = upward)
+      expect(game.bird.velocity).toBeLessThan(0);
+    });
+  });
+
+  describe('tap tutorial', () => {
+    it('shouldShowTutorial returns true when counter is 0', () => {
+      global.localStorage.getItem = vi.fn(() => null);
+      global.localStorage.setItem = vi.fn();
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+
+      expect(game.shouldShowTutorial()).toBe(true);
+    });
+
+    it('shouldShowTutorial returns true when counter is less than 3', () => {
+      global.localStorage.getItem = vi.fn(() => '2');
+      global.localStorage.setItem = vi.fn();
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+
+      expect(game.shouldShowTutorial()).toBe(true);
+    });
+
+    it('shouldShowTutorial returns false when counter is 3 or more', () => {
+      global.localStorage.getItem = vi.fn(() => '3');
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+
+      expect(game.shouldShowTutorial()).toBe(false);
+    });
+
+    it('shouldShowTutorial increments the counter in localStorage', () => {
+      global.localStorage.getItem = vi.fn(() => '1');
+      global.localStorage.setItem = vi.fn();
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.shouldShowTutorial();
+
+      expect(global.localStorage.setItem).toHaveBeenCalledWith('neonflap_tutorialShown', '2');
+    });
+
+    it('shouldShowTutorial returns true when localStorage throws (private mode)', () => {
+      global.localStorage.getItem = vi.fn(() => { throw new Error('Private mode'); });
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+
+      expect(game.shouldShowTutorial()).toBe(true);
+    });
+
+    it('should go to READY state when tutorial should be shown', () => {
+      global.localStorage.getItem = vi.fn((key) => {
+        if (key === 'neonFlapHighScore') return '10';
+        return null;
+      });
+      global.localStorage.setItem = vi.fn();
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'START';
+      game.isAutoPlay = false;
+
+      game.start();
+
+      expect(game.gameState).toBe('READY');
+    });
+
+    it('should skip READY state and go to PLAYING when tutorial already shown 3 times', () => {
+      global.localStorage.getItem = vi.fn((key) => {
+        if (key === 'neonFlapHighScore') return '10';
+        if (key === 'neonflap_tutorialShown') return '3';
+        return null;
+      });
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.gameState = 'START';
+      game.isAutoPlay = false;
+
+      game.start();
+
+      expect(game.gameState).toBe('PLAYING');
+    });
+
+    it('showTapTutorial should add active class to tutorial element', () => {
+      const mockTutorial = { classList: { add: vi.fn(), remove: vi.fn() } };
+      vi.spyOn(document, 'getElementById').mockReturnValue(mockTutorial);
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.showTapTutorial();
+
+      expect(mockTutorial.classList.add).toHaveBeenCalledWith('active');
+
+      vi.restoreAllMocks();
+    });
+
+    it('hideTapTutorial should remove active class from tutorial element', () => {
+      const mockTutorial = { classList: { add: vi.fn(), remove: vi.fn() } };
+      vi.spyOn(document, 'getElementById').mockReturnValue(mockTutorial);
+
+      const game = new GameLoop(canvas, ctx, uiElements);
+      game.init();
+      game.showTapTutorial(); // Sets tapTutorial reference
+      game.hideTapTutorial();
+
+      expect(mockTutorial.classList.remove).toHaveBeenCalledWith('active');
+
+      vi.restoreAllMocks();
     });
   });
 

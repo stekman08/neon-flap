@@ -30,7 +30,9 @@ export class GameLoop {
         // Game state
         this.currentPipeSpeed = INITIAL_PIPE_SPEED;
         this.currentPipeGap = GameConfig.initialPipeGap;
-        this.gameState = 'START'; // START, PLAYING, GAMEOVER
+        this.gameState = 'START'; // START, READY, PLAYING, GAMEOVER
+        this.readyHoverTime = 0; // For bird hover animation in READY state
+        this.tapTutorial = null; // Tutorial element reference
         this.frames = 0;
         this.isAutoPlay = false;
         this.lastPipeGapCenter = 0;
@@ -117,24 +119,83 @@ export class GameLoop {
                 this.init();
             }
 
-            this.gameState = 'PLAYING';
             this.uiElements.startScreen.classList.remove('active');
             this.uiElements.gameOverScreen.classList.remove('active');
-            this.scoring.showScoreHud();
 
-            // Enable AI debug logging for auto-play mode
+            // AI modes skip READY state and go straight to PLAYING
             if (this.isAutoPlay) {
+                this.gameState = 'PLAYING';
+                this.scoring.showScoreHud();
                 aiDebugLog.enable();
                 aiDebugLog.logGameStart(this.bird);
+                this.bird.jump();
+            } else {
+                // Human mode: show tutorial if not seen 3 times yet
+                const showTutorial = this.shouldShowTutorial();
+                if (showTutorial) {
+                    this.gameState = 'READY';
+                    this.readyHoverTime = 0;
+                    this.bird.y = this.canvas.height / 2;
+                    this.bird.velocity = 0;
+                    this.showTapTutorial();
+                } else {
+                    // Tutorial already shown 3 times, skip to PLAYING
+                    this.gameState = 'PLAYING';
+                    this.scoring.showScoreHud();
+                    this.bird.jump();
+                }
             }
-
-            this.bird.jump();
 
             // Ensure loop is running
             if (!this.lastTimestamp) {
                 this.lastTimestamp = performance.now();
                 this.loop(this.lastTimestamp);
             }
+        }
+    }
+
+    /**
+     * Transition from READY to PLAYING (called on first tap)
+     */
+    startPlaying() {
+        if (this.gameState !== 'READY') return;
+
+        this.gameState = 'PLAYING';
+        this.scoring.showScoreHud();
+        this.hideTapTutorial();
+        this.bird.jump();
+    }
+
+    /**
+     * Check if tutorial should be shown (first 3 play sessions)
+     * Also increments the counter when returning true
+     */
+    shouldShowTutorial() {
+        try {
+            const timesShown = parseInt(localStorage.getItem('neonflap_tutorialShown') || '0', 10);
+            if (timesShown >= 3) {
+                return false;
+            }
+            localStorage.setItem('neonflap_tutorialShown', String(timesShown + 1));
+            return true;
+        } catch {
+            // localStorage unavailable (private mode), show tutorial
+            return true;
+        }
+    }
+
+    showTapTutorial() {
+        if (!this.tapTutorial) {
+            this.tapTutorial = document.getElementById('tap-tutorial');
+        }
+        if (this.tapTutorial) {
+            this.tapTutorial.classList.add('active');
+        }
+    }
+
+    hideTapTutorial() {
+        if (this.tapTutorial) {
+            this.tapTutorial.classList.remove('active');
         }
     }
 
@@ -253,6 +314,17 @@ export class GameLoop {
         this.synthGrid.update(this.currentPipeSpeed, gameHue, deltaTime);
         for (let i = 0; i < this.matrixRain.length; i++) {
             this.matrixRain[i].update(gameHue, deltaTime);
+        }
+
+        // READY state: bird hovers, waiting for first tap
+        if (this.gameState === 'READY') {
+            this.readyHoverTime += deltaTime * 0.05;
+            // Gentle hover animation (sine wave)
+            this.bird.y = (this.canvas.height / 2) + Math.sin(this.readyHoverTime) * 8;
+            this.bird.velocity = 0;
+            this.bird.rotation = 0;
+            // Update bird visuals without physics
+            this.bird.updateColorCache(gameHue);
         }
 
         if (this.gameState === 'PLAYING') {
