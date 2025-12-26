@@ -50,9 +50,9 @@ export class ScoringSystem {
                 // localStorage may be unavailable or quota exceeded
             }
 
-            // Track new highscore in analytics
+            // Track new highscore in analytics (not for turtle mode)
             try {
-                if (window.goatcounter && window.goatcounter.count) {
+                if (!GameConfig.isTurtleMode && window.goatcounter && window.goatcounter.count) {
                     window.goatcounter.count({
                         path: '/event/highscore/' + this.highScore,
                         title: 'Highscore: ' + this.highScore,
