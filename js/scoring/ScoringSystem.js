@@ -54,8 +54,8 @@ export class ScoringSystem {
             try {
                 if (!GameConfig.isTurtleMode && window.goatcounter && window.goatcounter.count) {
                     window.goatcounter.count({
-                        path: '/event/highscore/' + this.highScore,
-                        title: 'Highscore: ' + this.highScore,
+                        path: '/neonflap/event/highscore/' + this.highScore,
+                        title: 'NeonFlap Highscore: ' + this.highScore,
                         event: true
                     });
                 }
