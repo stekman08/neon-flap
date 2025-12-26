@@ -1,4 +1,4 @@
-// Version: 0fb57e7 • 2025-12-25 14:49
+// Version: 0538225 • 2025-12-26 13:11
 // Cache name will be set dynamically based on version
 let CACHE_NAME = 'neon-flap-v1'; // fallback
 
