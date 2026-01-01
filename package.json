@@ -19,7 +19,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.22.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
